@@ -1,6 +1,6 @@
 import json
 import numpy
-import lzma
+import zlib
 import pickle
 
 SUPPORT_TYPE = [numpy.ndarray, dict, bytes, str, list, int, float]
@@ -27,6 +27,6 @@ def decompress(binary):
     data = lzma.decompress(binary, format=lzma.FORMAT_XZ)
     try:
         data = json.loads(data)
-    except json.JSONDecodeError:
+    except json.JSONDecodeError and UnicodeDecodeError:
         data = pickle.loads(data)
     return data
