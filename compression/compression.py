@@ -1,4 +1,6 @@
 import json
+
+import blosc
 import numpy
 import zlib
 import pickle
@@ -6,7 +8,7 @@ import pickle
 SUPPORT_TYPE = [numpy.ndarray, dict, bytes, str, list, int, float]
 
 
-def compress(data, compress_lv=lzma.PRESET_EXTREME, check=lzma.CHECK_SHA256):
+def compress(data):
     """
     if ndarray => using numpy tobytes, otherwise using json.dumps -> encode("utf-8")
     :param check:
@@ -19,14 +21,24 @@ def compress(data, compress_lv=lzma.PRESET_EXTREME, check=lzma.CHECK_SHA256):
         data = pickle.dumps(data, pickle.HIGHEST_PROTOCOL)
     if not isinstance(data, bytes):
         data = json.dumps(data).encode("utf-8")
-    compressed = lzma.compress(data, preset=compress_lv, check=check, format=lzma.FORMAT_XZ)
+    compressed = zlib.compress(data)
     return compressed
 
 
 def decompress(binary):
-    data = lzma.decompress(binary, format=lzma.FORMAT_XZ)
+    data = zlib.decompress(binary)
     try:
         data = json.loads(data)
     except json.JSONDecodeError and UnicodeDecodeError:
         data = pickle.loads(data)
     return data
+
+
+def compress_ndarray(vectors):
+    assert isinstance(vectors, numpy.ndarray)
+    return pickle.dumps([blosc.compress(vectors, clevel=5, cname="lz4"), vectors.dtype, vectors.shape])
+
+
+def decompress_ndarray(binary):
+    buffer, dtype, shape = pickle.loads(binary)
+    return numpy.frombuffer(blosc.decompress(buffer), dtype=dtype).reshape(shape)

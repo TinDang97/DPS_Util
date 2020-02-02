@@ -1,6 +1,5 @@
 import ssl
 from kafka import KafkaProducer, KafkaConsumer
-from DPS_Util.compression import compress, decompress
 
 
 def initial_ssl(username):
@@ -16,7 +15,8 @@ def initial_ssl(username):
 
 
 def initial_consumer(topic, bootstrap_servers='localhost', group_id=None, auto_offset_reset="earliest",
-                     enable_auto_commit=True, sasl_plain_username=None, sasl_plain_password=None):
+                     enable_auto_commit=True, sasl_plain_username=None, sasl_plain_password=None,
+                     consumer_timeout_ms=float('inf'), value_deserializer=None):
     sasl_mechanism, security_protocol, ssl_context = initial_ssl(sasl_plain_username)
 
     return KafkaConsumer(
@@ -30,12 +30,14 @@ def initial_consumer(topic, bootstrap_servers='localhost', group_id=None, auto_o
         security_protocol=security_protocol,
         ssl_context=ssl_context,
         sasl_mechanism=sasl_mechanism,
-        value_deserializer=lambda m: decompress(m)
+        value_deserializer=value_deserializer,
+        consumer_timeout_ms=consumer_timeout_ms
     )
 
 
-def initial_producer(bootstrap_servers='localhost', compression_type='gzip',
-                     sasl_plain_username=None, sasl_plain_password=None):
+def initial_producer(bootstrap_servers='localhost', compression_type='lz4',
+                     sasl_plain_username=None, sasl_plain_password=None, value_serializer=None,
+                     max_request_size=1*1024**2):
     sasl_mechanism, security_protocol, context = initial_ssl(sasl_plain_username)
     return KafkaProducer(
         bootstrap_servers=bootstrap_servers,
@@ -45,5 +47,6 @@ def initial_producer(bootstrap_servers='localhost', compression_type='gzip',
         security_protocol=security_protocol,
         ssl_context=context,
         sasl_mechanism=sasl_mechanism,
-        value_serializer=lambda m: compress(m)
+        value_serializer=value_serializer,
+        max_request_size=max_request_size
     )
