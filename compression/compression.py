@@ -1,44 +1,39 @@
-import json
+import pickle
 
 import blosc
 import numpy
-import zlib
-import pickle
 
-SUPPORT_TYPE = [numpy.ndarray, dict, bytes, str, list, int, float]
+COMPRESS_FASTEST = 0
+COMPRESS_BEST = 1
 
 
-def compress(data):
-    """
-    if ndarray => using numpy tobytes, otherwise using json.dumps -> encode("utf-8")
-    :param check:
-    :param compress_lv:
-    :param data:
-    :return:
-    """
-    assert type(data) in SUPPORT_TYPE
-    if isinstance(data, numpy.ndarray):
-        data = pickle.dumps(data, pickle.HIGHEST_PROTOCOL)
-    if not isinstance(data, bytes):
-        data = json.dumps(data).encode("utf-8")
-    compressed = zlib.compress(data)
-    return compressed
+def compress(data, compress_type=COMPRESS_FASTEST, nthreads=blosc.ncores):
+    assert isinstance(data, bytes)
+    blosc.set_nthreads(nthreads)
+
+    compressor = "lz4" if compress_type == COMPRESS_FASTEST else "zstd"
+    level = 1 if compress_type == COMPRESS_FASTEST else 5
+    return blosc.compress(data, cname=compressor, clevel=level)
 
 
 def decompress(binary):
-    data = zlib.decompress(binary)
-    try:
-        data = json.loads(data)
-    except json.JSONDecodeError and UnicodeDecodeError:
-        data = pickle.loads(data)
-    return data
+    assert isinstance(binary, bytes)
+    return blosc.decompress(binary)
 
 
-def compress_ndarray(vectors):
+def compress_ndarray(vectors, compress_type=COMPRESS_FASTEST, nthreads=blosc.ncores):
     assert isinstance(vectors, numpy.ndarray)
-    return pickle.dumps([blosc.compress(vectors, clevel=5, cname="lz4"), vectors.dtype, vectors.shape])
+    blosc.set_nthreads(nthreads)
+
+    compressor = "lz4" if compress_type == COMPRESS_FASTEST else "zstd"
+    level = 1 if compress_type == COMPRESS_FASTEST else 5
+    buffer = blosc.compress_ptr(vectors.__array_interface__['data'][0], vectors.size, vectors.dtype.itemsize,
+                       clevel=level, cname=compressor, shuffle=blosc.BITSHUFFLE)
+    return pickle.dumps([buffer, vectors.dtype, vectors.shape])
 
 
 def decompress_ndarray(binary):
     buffer, dtype, shape = pickle.loads(binary)
-    return numpy.frombuffer(blosc.decompress(buffer), dtype=dtype).reshape(shape)
+    arr = numpy.empty(shape, dtype)
+    blosc.decompress_ptr(buffer, arr.__array_interface__['data'][0])
+    return arr
