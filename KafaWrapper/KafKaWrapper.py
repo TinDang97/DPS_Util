@@ -35,7 +35,7 @@ def initial_consumer(topic, bootstrap_servers='localhost', group_id=None, auto_o
     )
 
 
-def initial_producer(bootstrap_servers='localhost', compression_type=None,
+def initial_producer(bootstrap_servers='localhost', compression_type="lz4",
                      sasl_plain_username=None, sasl_plain_password=None, value_serializer=None,
                      max_request_size=1*1024**2):
     sasl_mechanism, security_protocol, context = initial_ssl(sasl_plain_username)
