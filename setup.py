@@ -1,4 +1,4 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 setup(name='dpsutil',
       version='0.1',
@@ -8,7 +8,7 @@ setup(name='dpsutil',
       author='TinDang',
       author_email='rainstone1029x@gmail.com',
       license='MIT',
-      packages=["dpsutil"],
+      packages=find_packages(),
       install_requires=[
             'numpy',
             'redis',

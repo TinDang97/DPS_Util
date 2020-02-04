@@ -1,7 +1,5 @@
 import logging
-from logging import handlers
 import sys
-from datetime import date
 import os
 
 root_dir = 'logs/'
