@@ -8,7 +8,7 @@ setup(name='dpsutil',
       author='TinDang',
       author_email='rainstone1029x@gmail.com',
       license='MIT',
-      packages=["dsputil"],
+      packages=["dpsutil"],
       install_requires=[
             'numpy',
             'redis',
