@@ -2,11 +2,16 @@ import hashlib
 import datetime
 
 
+def hash(data, hash_func=hashlib.sha1) -> str:
+    assert hasattr(hash_func, "__call__")
+    return hash_func(data).hexdigest()
+
+
 def short_hash(msg: (str, bytes)) -> str:
     assert isinstance(msg, (str, bytes))
     if type(msg) is str:
         msg = msg.encode("UTF-8")
-    return hashlib.sha1(msg).hexdigest()[:10]
+    return hash(msg)[:10]
 
 
 def hash_now() -> str:
