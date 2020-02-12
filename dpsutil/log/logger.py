@@ -11,20 +11,19 @@ except:
 
 def get_logger(logger_name='default'):
     """
-    Get log and format
+    Get logging and format
     All logs will be saved into logs/log-DATE (default)
     Default size of log file = 15m
     :param logger_name:
     :return:
     """
     log = logging.getLogger(logger_name)
-    log.setLevel(log.DEBUG)
-    log_format = log.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+    log.setLevel(logging.DEBUG)
+    log_format = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
 
-    ch = log.StreamHandler(sys.stdout)
+    ch = logging.StreamHandler(sys.stdout)
     ch.setFormatter(log_format)
     log.addHandler(ch)
-
     return log
 
 
