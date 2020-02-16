@@ -10,6 +10,7 @@ setup(name='dpsutil',
       license='MIT',
       packages=find_packages(),
       install_requires=[
+            'scikit-build'
             'numpy',
             'redis',
             'kafka-python',
