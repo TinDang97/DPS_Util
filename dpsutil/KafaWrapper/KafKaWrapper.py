@@ -14,7 +14,7 @@ def initial_ssl(username):
     return sasl_mechanism, security_protocol, ssl_context
 
 
-def initial_consumer(topic, bootstrap_servers='localhost', group_id=None, auto_offset_reset="earliest",
+def initial_consumer(topic=None, bootstrap_servers='localhost', group_id=None, auto_offset_reset="earliest",
                      enable_auto_commit=True, sasl_plain_username=None, sasl_plain_password=None,
                      consumer_timeout_ms=float('inf'), value_deserializer=None):
     sasl_mechanism, security_protocol, ssl_context = initial_ssl(sasl_plain_username)
