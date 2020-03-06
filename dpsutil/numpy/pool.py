@@ -8,9 +8,6 @@ AUTO_SIZE = -1
 MIN_SIZE = 256
 ALPHA_SIZE = 1024
 
-MAX_BUFFER_DEFAULT = 256 * (1024 ** 2)  # cache_size in RAM.
-NO_BUFFER = 0
-
 DEFAULT_TYPE = numpy.float32
 PERFORMANCE_TYPE = numpy.float16
 TYPE_SUPPORT = [numpy.float16, numpy.float32, numpy.float64, numpy.float128,
@@ -270,3 +267,6 @@ class VectorPool(object):
             vector_pool = decompress_ndarray(f.read())
         self.add(vector_pool)
         return self.__repr__()
+
+
+__all__ = ['PERFORMANCE_TYPE', 'TYPE_SUPPORT', 'VectorPool']
