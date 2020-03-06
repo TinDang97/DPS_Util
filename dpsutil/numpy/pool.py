@@ -269,4 +269,4 @@ class VectorPool(object):
         return self.__repr__()
 
 
-__all__ = ['PERFORMANCE_TYPE', 'TYPE_SUPPORT', 'VectorPool']
+__all__ = ['PERFORMANCE_TYPE', 'DEFAULT_TYPE', 'TYPE_SUPPORT', 'VectorPool']
