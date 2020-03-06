@@ -34,7 +34,7 @@ Implemented OpenCV with:
 - TurboJPEG (https://github.com/lilohuang/PyTurboJPEG)
 - FFmpeg(https://github.com/kkroening/ffmpeg-python) 
 
-To: improve read & write (image, video) IO speed. Faster than 2.5x OpenCV IO
+To: improve read & write (image, video) IO speed. Faster than 2.6x OpenCV IO
 
 - Added some function which used frequently.
 - More info: find in dpsutil.media
