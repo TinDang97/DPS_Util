@@ -1,6 +1,15 @@
 # DPS_Util
 This repository contain all util.
 
+## Install:
+
+Get at https://pypi.org/project/dpsutil/
+
+```
+pip install dpsutil
+```
+
+
 ## Todo:
 
 - Numpy Pool -> Cache Algorithm in RAM
