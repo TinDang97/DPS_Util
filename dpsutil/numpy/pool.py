@@ -46,14 +46,14 @@ class VectorPool(object):
             os.remove(self.__file_path__)
 
     def __eq__(self, other):
-        return self.vectors == other
+        return self.vectors() == other
 
     def __len__(self):
         return self.length
 
     def __repr__(self):
         return f"Stored: {self.length} vectors, dim: {self.__dim__}, type: {self.dtype}\n" \
-               f"{self.vectors.__repr__()}"
+               f"{self.vectors().__repr__()}"
 
     def __getitem__(self, *args, **kwargs):
         return self.get(args)
@@ -68,8 +68,8 @@ class VectorPool(object):
     def __add__(self, other):
         """equal a + b"""
         if isinstance(other, VectorPool):
-            return self.vectors + other.vectors
-        return self.vectors + other
+            return self.vectors() + other.vectors
+        return self.vectors() + other
 
     def __iadd__(self, other):
         """equal a += b"""
@@ -82,8 +82,8 @@ class VectorPool(object):
     def __sub__(self, other):
         """equal a - b"""
         if isinstance(other, VectorPool):
-            return self.vectors * other.vectors
-        return self.vectors - other
+            return self.vectors() * other.vectors
+        return self.vectors() - other
 
     def __isub__(self, other):
         """equal a -= b"""
@@ -96,8 +96,8 @@ class VectorPool(object):
     def __mul__(self, other):
         """equal a * b"""
         if isinstance(other, VectorPool):
-            return self.vectors * other.vectors
-        return self.vectors * other
+            return self.vectors() * other.vectors
+        return self.vectors() * other
 
     def __imul__(self, other):
         """equal a *= b"""
@@ -110,8 +110,8 @@ class VectorPool(object):
     def __truediv__(self, other):
         """equal a / b"""
         if isinstance(other, VectorPool):
-            return self.vectors / other.vectors
-        return self.vectors / other
+            return self.vectors() / other.vectors
+        return self.vectors() / other
 
     def __itruediv__(self, other):
         """equal a /= b"""
@@ -122,21 +122,21 @@ class VectorPool(object):
         return self
 
     def __pow__(self, power, modulo=None):
-        return self.vectors ** power
+        return self.vectors()() ** power
 
     def __str__(self):
         return self.__repr__()
 
     def __abs__(self):
         """abs(a)"""
-        return numpy.abs(self.vectors)
+        return numpy.abs(self.vectors()())
 
     def __delitem__(self, key):
         self.remove(key)
 
     def __getattr__(self, item):
-        assert hasattr(self.vectors, item), "Not exist attribute!"
-        return getattr(self.vectors, item)
+        assert hasattr(self.vectors(), item), "Not exist attribute!"
+        return getattr(self.vectors(), item)
 
     def __exit__(self):
         self.__del__()
@@ -153,7 +153,6 @@ class VectorPool(object):
     def length(self):
         return self.__length__
 
-    @property
     def vectors(self):
         return self.__vector_pool__[self.__table_ids__, :]
 
@@ -222,7 +221,7 @@ class VectorPool(object):
 
     def apply(self, func):
         assert hasattr(func, '__call__'), f"Require function. But got {type(func)}"
-        self.__vector_pool__[self.__ids__] = func(self.vectors)
+        self.__vector_pool__[self.__ids__] = func(self.vectors())
 
     def get(self, ids):
         assert isinstance(ids, (int, list, tuple, numpy.ndarray))
@@ -258,7 +257,7 @@ class VectorPool(object):
                                                             "\nIf you want to overwrite: over_write=True"
 
         with open(file_path, 'wb') as f:
-            f.write(compress_ndarray(self.vectors))
+            f.write(compress_ndarray(self.vectors()))
             f.flush()
         return file_path
 

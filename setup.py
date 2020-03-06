@@ -11,11 +11,13 @@ setup(name='dpsutil',
       packages=find_packages(),
       install_requires=[
             'scikit-build',
+            'cmake',
             'numpy',
             'redis',
             'kafka-python',
             'lz4',
             'blosc',
-            'ffmpeg-python', 'natsort'
+            'ffmpeg-python',
+            'natsort'
       ],
       zip_safe=False)
