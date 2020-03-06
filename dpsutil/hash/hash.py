@@ -16,3 +16,6 @@ def short_hash(msg: (str, bytes)) -> str:
 
 def hash_now() -> str:
     return short_hash(datetime.datetime.now().isoformat())
+
+
+__all__ = ['hash_now', 'hash', 'short_hash']

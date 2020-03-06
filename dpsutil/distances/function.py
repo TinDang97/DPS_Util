@@ -63,3 +63,7 @@ def euclid_cosim_normalized(euclid_dis):
 
 def absolute_distance(x1, x2):
     return numpy.sum(numpy.absolute(x1 - x2))
+
+
+__all__ = ['normalize_L1', 'normalize_L2', 'cosine_similarity', 'cosine', 'euclidean_distance',
+           'cosim_euclid_normalized', 'euclid_cosim_normalized', 'absolute_distance']

@@ -36,3 +36,6 @@ def decompress_ndarray(binary):
     arr = numpy.empty(shape, dtype)
     blosc.decompress_ptr(buffer, arr.__array_interface__['data'][0])
     return arr
+
+
+__all__ = ['compress', 'decompress', 'compress_ndarray', 'decompress_ndarray', 'COMPRESS_BEST', 'COMPRESS_FASTEST']
