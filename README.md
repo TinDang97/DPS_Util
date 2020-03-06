@@ -51,3 +51,13 @@ All function execute in numpy.
 ### Other:
 
 - Hashing
+
+## Issue:
+
+### Cmake error during install blosc
+
+Follow instuction to install Cmake: 
+```html
+https://cliutils.gitlab.io/modern-cmake/chapters/intro/installing.html
+```
+

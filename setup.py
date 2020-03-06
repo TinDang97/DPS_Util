@@ -11,7 +11,7 @@ setup(name='dpsutil',
       packages=find_packages(),
       install_requires=[
             'scikit-build',
-            'cmake',
+            'cmake>3.12',
             'numpy',
             'redis',
             'kafka-python',
