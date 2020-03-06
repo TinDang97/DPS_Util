@@ -25,14 +25,14 @@ This repository contain all util.
 
 ### Numpy Pool:
 
-- Implemented numpy.memmap with Hight Peromance
+- Implemented numpy.memmap with High Performance and control memory IO.
 
 ### Media:
 
 Implemented OpenCV with:
 
-TurboJPEG (https://github.com/lilohuang/PyTurboJPEG)
-FFmpeg(https://github.com/kkroening/ffmpeg-python) 
+- TurboJPEG (https://github.com/lilohuang/PyTurboJPEG)
+- FFmpeg(https://github.com/kkroening/ffmpeg-python) 
 
 To: improve read & write (image, video) IO speed. Faster than 2.5x OpenCV IO
 
@@ -64,3 +64,4 @@ Follow instuction to install Cmake:
 https://cliutils.gitlab.io/modern-cmake/chapters/intro/installing.html
 ```
 
+Develop by: TinDang
