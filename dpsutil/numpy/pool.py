@@ -16,10 +16,20 @@ TYPE_SUPPORT = [numpy.float16, numpy.float32, numpy.float64, numpy.float128,
 
 
 class VectorPool(object):
-    __MODEL_EXT__ = "vecp"
+    """
+    VectorPool implement numpy.memmap to save all vectors in disk with High Performance IO.
+    Easier than numpy.memmap
+    - Reduce RAM
+    - Speedup IO
+    - Auto Scale
+    - Support backup and recovery data in a second.
 
+    Next version:
     # TODO: buffer in ram that speed_up query.
     # TODO: multi-process to solve large Pool
+    """
+    __MODEL_EXT__ = "vecp"
+
     def __init__(self, dim, dtype=DEFAULT_TYPE):
         assert dtype in TYPE_SUPPORT
         assert dim > 0
