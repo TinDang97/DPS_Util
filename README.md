@@ -9,6 +9,23 @@ Get at https://pypi.org/project/dpsutil/
 pip install dpsutil
 ```
 
+## Change log:
+
+Ver 1.0.0:
+- Compression -> DONE
+- KafkaWrapper -> DONE
+- RedisWrapper -> DONE
+- Vector Pool -> DONE
+- Media -> DONE
+- Computer Vision -> DONE
+- Distance -> DONE
+- Hashing -> DONE
+
+Ver 1.0.1:
+- Added image_info -> Get (format, width, height) of image without decoding.
+- Upgrade imdecode -> Auto decode image but need not provide encode_type.
+- Change '_numpy.pool_' to '_vector.pool_'
+- 
 
 ## Todo:
 
@@ -32,7 +49,7 @@ pip install dpsutil
 
 - Wrapping Redis Connector with default setting and security.
 
-### Numpy Pool:
+### Vector Pool:
 
 - Implemented numpy.memmap with High Performance and control memory IO.
 
