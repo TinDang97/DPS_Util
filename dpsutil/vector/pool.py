@@ -17,8 +17,8 @@ TYPE_SUPPORT = [numpy.float16, numpy.float32, numpy.float64, numpy.float128,
 
 class VectorPool(object):
     """
-    VectorPool implement numpy.memmap to save all vectors in disk with High Performance IO.
-    Easier than numpy.memmap
+    VectorPool implement vector.memmap to save all vectors in disk with High Performance IO.
+    Easier than vector.memmap
     - Reduce RAM
     - Speedup IO
     - Auto Scale

@@ -14,7 +14,7 @@ setup(name='dpsutil',
       author_email='rainstone1029x@gmail.com',
       packages=find_packages(),
       install_requires=[
-            'numpy',
+            'vector',
             'redis',
             'kafka-python',
             'lz4',
