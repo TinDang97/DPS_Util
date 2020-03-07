@@ -5,7 +5,7 @@ import cv2
 import numpy
 from turbojpeg import TurboJPEG, TJPF_RGB, TJPF_BGR
 
-from .tool import hex2rgb, color_rgb2bgr
+from .tool import hex2rgb, color_rgb2bgr, image_info, PNG_FORMAT, JPEG_FORMAT, JPEG2000_FORMAT
 from .constant import PX_BGR, PX_RGB, DEFAULT_QUALITY, INTER_DEFAULT, ENCODE_PNG, ENCODE_JPEG
 
 """
@@ -21,7 +21,11 @@ def imencode(img, encode_type=ENCODE_JPEG, quality=DEFAULT_QUALITY, color_format
     This function implement from cv2.imencode.
     Ref PNG: https://docs.opencv.org/2.4/modules/highgui/doc/reading_and_writing_images_and_video.html#imencode
     Ref JPEG: https://github.com/kkroening/ffmpeg-python
-    :return: Image - [B, G, R]
+    Options:
+    - encode_type: ENCODE_JPEG, ENCODE_PNG - Output format of image.
+    - quality: set quality of image after encode. 0 -> 100. *Note: 100 - Lossless compression
+    - color_format: Image - [B, G, R] or [R, G, B) - Format of color image input.
+    :return: buffer
     :rtype: bytes
     """
     if encode_type == ENCODE_JPEG:
@@ -34,25 +38,30 @@ def imencode(img, encode_type=ENCODE_JPEG, quality=DEFAULT_QUALITY, color_format
         quality = max(0, min(int(quality / 10) - 1, 9))
         _, buffer = cv2.imencode(ENCODE_PNG, img, [cv2.IMWRITE_PNG_COMPRESSION, quality])
         buffer = buffer.tobytes()
-
     return buffer
 
 
-def imdecode(buffer, encode_type=ENCODE_JPEG, color_format=PX_BGR):
+def imdecode(buffer, color_format=PX_BGR):
     """
     This function implement from cv2.imencode.
     Ref: https://docs.opencv.org/2.4/modules/highgui/doc/reading_and_writing_images_and_video.html#imdecode
-    :return: Image - [B, G, R]
+    Options:
+    - color_format: Image - [B, G, R] or [R, G, B) - Format of color image input.
     :rtype: numpy.ndarray
     """
-    if encode_type == ENCODE_JPEG:
+    ext, _, _ = image_info(buffer)
+
+    if ext in [JPEG_FORMAT, JPEG2000_FORMAT]:
         color_format = TJPF_RGB if color_format == PX_RGB else TJPF_BGR
         return jpeg_compressor.decode(buffer, pixel_format=color_format)
 
-    return cv2.imdecode(buffer, 1)
+    image = cv2.imdecode(numpy.frombuffer(buffer, dtype=numpy.uint8), 1)
+    if color_format == PX_RGB:
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    return image
 
 
-def imread(img_path, encode_type=ENCODE_JPEG, color_format=PX_BGR):
+def imread(img_path, color_format=PX_BGR):
     assert isinstance(img_path, (str, io.BufferedIOBase))
 
     try:
@@ -60,7 +69,7 @@ def imread(img_path, encode_type=ENCODE_JPEG, color_format=PX_BGR):
             img_path = open(img_path, 'rb')
 
         buffer = img_path.read()
-        return imdecode(buffer, encode_type, color_format=color_format)
+        return imdecode(buffer, color_format=color_format)
     except Exception as e:
         raise e
     finally:

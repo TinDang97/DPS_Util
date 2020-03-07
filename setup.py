@@ -14,8 +14,6 @@ setup(name='dpsutil',
       author_email='rainstone1029x@gmail.com',
       packages=find_packages(),
       install_requires=[
-            'scikit-build',
-            'cmake>3.12',
             'numpy',
             'redis',
             'kafka-python',

@@ -68,33 +68,49 @@ All function execute in numpy.
 
 #### Cmake error during install blosc
 
-Follow instuction to install Cmake: 
-```html
+Firstly, you need install scikit
+
+    $ pip install scikit-build
+    
+After that, follow instuction to install Cmake: 
+
 https://cliutils.gitlab.io/modern-cmake/chapters/intro/installing.html
-```
+
+Python 
+
+    $ pip install cmake>=3.12   
 
 #### Not found 'FFmpeg':
 
 Find FFmppeg lib at: https://www.ffmpeg.org/download.html
 
-- **Linux**
-```
-sudo apt-get install ffmpeg
-```
+**Linux**:
+
+    sudo apt-get install ffmpeg
 
 #### Not found 'libjpeg-turbo':
 
 Find FFmppeg lib at: https://libjpeg-turbo.org/Documentation/OfficialBinaries
 
-- **Linux**
-```
-sudo apt install libturbojpeg
-```
+**Linux**:
+
+    $ sudo apt install libturbojpeg
 
 #### Not found Redis or Kafka server:
 
 - Make sure your Redis or Kafka server started.
 - Make sure correct username & password.
+
+#### Not found 'Could NOT find OpenSSL':
+
+SSL development libraries have to be installed
+https://github.com/openssl/openssl#build-and-install
+
+Ubuntu:
+
+    $ apt-get install libssl-dev libffi-dev
+
+   
 
 Develop by: TinDang\
 OS: Ubuntu Bionic 18.4\
