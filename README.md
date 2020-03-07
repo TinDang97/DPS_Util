@@ -25,7 +25,6 @@ Ver 1.0.1:
 - Added image_info -> Get (format, width, height) of image without decoding.
 - Upgrade imdecode -> Auto decode image but need not provide encode_type.
 - Change '_numpy.pool_' to '_vector.pool_'
-- 
 
 ## Todo:
 
@@ -60,7 +59,10 @@ Implemented OpenCV with:
 - TurboJPEG (https://github.com/lilohuang/PyTurboJPEG)
 - FFmpeg(https://github.com/kkroening/ffmpeg-python) 
 
-To: improve read & write (image, video) IO speed. Faster than 2.6x OpenCV IO
+To: improve read & write (image, video) IO speed.
+- Faster than OpenCV:
+  - 2-6x in JPEG
+  - 1.1x with others.
 
 - Added some function which used frequently.
 - More info: find in dpsutil.media

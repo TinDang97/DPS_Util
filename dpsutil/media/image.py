@@ -64,16 +64,11 @@ def imdecode(buffer, color_format=PX_BGR):
 def imread(img_path, color_format=PX_BGR):
     assert isinstance(img_path, (str, io.BufferedIOBase))
 
-    try:
-        if type(img_path) is str:
-            img_path = open(img_path, 'rb')
+    if type(img_path) is str:
+        img_path = open(img_path, 'rb')
 
-        buffer = img_path.read()
-        return imdecode(buffer, color_format=color_format)
-    except Exception as e:
-        raise e
-    finally:
-        img_path.close()
+    buffer = img_path.read()
+    return imdecode(buffer, color_format=color_format)
 
 
 def imwrite(img, img_path, encode_type=ENCODE_JPEG, quality=95, color_format=PX_BGR, over_write=False):

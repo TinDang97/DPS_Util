@@ -18,8 +18,8 @@ setup(name='dpsutil',
             'redis',
             'kafka-python',
             'lz4',
-            'blosc',
-            'ffmpeg-python',
+            'blosc==1.8.3',
+            'ffmpeg-python==0.2.0',
             'natsort'
       ],
       python_requires='>=3.6')
