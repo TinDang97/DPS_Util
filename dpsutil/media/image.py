@@ -5,7 +5,7 @@ import cv2
 import numpy
 from turbojpeg import TurboJPEG, TJPF_RGB, TJPF_BGR
 
-from .tool import hex2rgb, color_rgb2bgr, image_info, PNG_FORMAT, JPEG_FORMAT, JPEG2000_FORMAT
+from .tool import hex2rgb, color_rgb2bgr, image_info, JPEG_FORMAT, JPEG2000_FORMAT
 from .constant import PX_BGR, PX_RGB, DEFAULT_QUALITY, INTER_DEFAULT, ENCODE_PNG, ENCODE_JPEG
 
 """
