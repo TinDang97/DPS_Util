@@ -24,7 +24,10 @@ Ver 1.0.0:
 Ver 1.0.1:
 - Added image_info -> Get (format, width, height) of image without decoding.
 - Upgrade imdecode -> Auto decode image but need not provide encode_type.
+
+Ver 1.0.2:
 - Change '_numpy.pool_' to '_vector.pool_'
+- Fix bugs
 
 ## Todo:
 
