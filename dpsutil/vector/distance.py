@@ -53,11 +53,19 @@ def euclidean_distance(x1, x2):
     return numpy.sqrt(numpy.sum((x1[:, numpy.newaxis, :] - x2[numpy.newaxis, :, :]) ** 2, axis=-1))
 
 
-def cosim_euclid_normalized(cosim):
+def cosim2euclid(cosim):
+    """
+    Convert cosine similarity -> normalized euclidean distance
+    :return:
+    """
     return numpy.sqrt(cosim)
 
 
-def euclid_cosim_normalized(euclid_dis):
+def euclid2cosim(euclid_dis):
+    """
+    Convert normalized euclidean distance -> cosine similarity
+    :return:
+    """
     return euclid_dis ** 2
 
 
@@ -66,4 +74,4 @@ def absolute_distance(x1, x2):
 
 
 __all__ = ['normalize_L1', 'normalize_L2', 'cosine_similarity', 'cosine', 'euclidean_distance',
-           'cosim_euclid_normalized', 'euclid_cosim_normalized', 'absolute_distance']
+           'cosim2euclid', 'euclid2cosim', 'absolute_distance']

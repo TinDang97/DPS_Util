@@ -1,7 +1,7 @@
 # DPS_Util
 This repository contain all util.
 
-## Install:
+### Install:
 
 Get at https://pypi.org/project/dpsutil/
 
@@ -9,13 +9,13 @@ Get at https://pypi.org/project/dpsutil/
 pip install dpsutil
 ```
 
-## Change log:
+### Change log:
 
 Ver 1.0.0:
 - Compression -> DONE
 - KafkaWrapper -> DONE
 - RedisWrapper -> DONE
-- Vector Pool -> DONE
+- Vector -> DONE
 - Media -> DONE
 - Computer Vision -> DONE
 - Distance -> DONE
@@ -29,33 +29,40 @@ Ver 1.0.2:
 - Change '_numpy.pool_' to '_vector.pool_'
 - Fix bugs
 
-## Todo:
+Ver 1.0.3:
+- Compression:
+    - Support list compression: _compress_list, decompres_list_
+- Distance: 
+    - Change distance.function -> vector.distance
+
+### Todo:
 
 - Numpy Pool -> Cache Algorithm in RAM
 - Sort -> implement natsort - https://github.com/SethMMorton/natsort
 - CV -> Find more util
 - Find & Add more functions
+ ---
+### Features
 
-## Task Done:
-
-### Compression Lossless:
+---
+#### Compression Lossless:
 
 - Support type: ndnumpy, bytes
 - Compress by blosc. It support multi compressor and multi-thread.
 
-### KafkaWrapper:
+#### KafkaWrapper:
 
 - Wrapping Consumer and Producer with default setting and security.
 
-### RedisWrapper
+#### RedisWrapper
 
 - Wrapping Redis Connector with default setting and security.
 
-### Vector Pool:
+#### Vector Pool:
 
 - Implemented numpy.memmap with High Performance and control memory IO.
 
-### Media:
+#### Media:
 
 Implemented OpenCV with:
 
@@ -74,20 +81,22 @@ To: improve read & write (image, video) IO speed.
 
 - Added Face Align with five landmark.
 
-### Distance:
+#### Distance:
 
-All function execute in numpy.
 - Added cosine_similarity
 - Added cosine
 - Added euclidean_distance
 - Added convert distance functions
 
-### Other:
+_*Note: all function execute in numpy._
+#### Other:
 
 - Hashing
+- Sort
+---
+### Issue:
 
-## Issue:
-
+---
 #### Cmake error during install blosc
 
 Firstly, you need install scikit
@@ -96,28 +105,30 @@ Firstly, you need install scikit
     
 After that, follow instuction to install Cmake: 
 
-https://cliutils.gitlab.io/modern-cmake/chapters/intro/installing.html
+> https://cliutils.gitlab.io/modern-cmake/chapters/intro/installing.html
 
 Python 
 
     $ pip install cmake>=3.12   
-
+---
 #### Not found 'FFmpeg':
 
-Find FFmppeg lib at: https://www.ffmpeg.org/download.html
+Find FFmppeg lib at:  
+> https://www.ffmpeg.org/download.html
 
 **Linux**:
 
     sudo apt-get install ffmpeg
-
+---
 #### Not found 'libjpeg-turbo':
 
-Find FFmppeg lib at: https://libjpeg-turbo.org/Documentation/OfficialBinaries
+Find FFmppeg lib at: 
+> https://libjpeg-turbo.org/Documentation/OfficialBinaries
 
 **Linux**:
 
     $ sudo apt install libturbojpeg
-
+---
 #### Not found Redis or Kafka server:
 
 - Make sure your Redis or Kafka server started.
@@ -126,14 +137,15 @@ Find FFmppeg lib at: https://libjpeg-turbo.org/Documentation/OfficialBinaries
 #### Not found 'Could NOT find OpenSSL':
 
 SSL development libraries have to be installed
-https://github.com/openssl/openssl#build-and-install
+> https://github.com/openssl/openssl#build-and-install
 
 Ubuntu:
 
     $ apt-get install libssl-dev libffi-dev
 
    
+___
 
-Develop by: TinDang\
-OS: Ubuntu Bionic 18.4\
+Develop by: TinDang   
+OS: Ubuntu Bionic 18.4  
 Python: 3.6.9 stable
