@@ -35,6 +35,9 @@ Ver 1.0.3:
 - Distance: 
     - Change distance.function -> vector.distance
 
+Ver 1.1.0:
+- Added AttrDict, FixedDict, FixedTypeDict
+
 ### Todo:
 
 - Numpy Pool -> Cache Algorithm in RAM
@@ -77,7 +80,7 @@ To: improve read & write (image, video) IO speed.
 - Added some function which used frequently.
 - More info: find in dpsutil.media
 
-### Computer Vision (cv):
+#### Computer Vision (cv):
 
 - Added Face Align with five landmark.
 
@@ -89,6 +92,13 @@ To: improve read & write (image, video) IO speed.
 - Added convert distance functions
 
 _*Note: all function execute in numpy._
+
+#### Attributes dict:
+
+- **AttrDict**: will help you get value of key via attributes. Implement attrdict.AttrDict
+- **FixedDict**: help cover your dict with (keys, values) that was defined before. Implement from AttrDict
+- **FixedTypeDict**: help cover your dict when set item. Implement from FixedDict.
+
 #### Other:
 
 - Hashing
