@@ -38,6 +38,10 @@ Ver 1.0.3:
 Ver 1.1.0:
 - Added AttrDict, FixedDict, FixedTypeDict
 
+Ver 1.1.1:
+- Fix bugs
+- Added UniqueTypeDict
+
 ### Todo:
 
 - Numpy Pool -> Cache Algorithm in RAM
@@ -98,6 +102,7 @@ _*Note: all function execute in numpy._
 - **AttrDict**: will help you get value of key via attributes. Implement attrdict.AttrDict
 - **FixedDict**: help cover your dict with (keys, values) that was defined before. Implement from AttrDict
 - **FixedTypeDict**: help cover your dict when set item. Implement from FixedDict.
+- **UniqueTypeDict**: dict only access one type for all element.
 
 #### Other:
 

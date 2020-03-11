@@ -32,7 +32,7 @@ class FixedDict(AttrDict):
         your_dict.a     # return: 5
 
     User case:
-    - When you need to control your params. Like config of AI Model.
+    - When you need to control your params or hyper config.
     - Make sure your dict only store some field.
     """
 
@@ -151,9 +151,9 @@ class FixedTypeDict(FixedDict):
         your_dict.a = 1.0   # Error TypeOfValueError
     """
     def __init__(self, **default_params):
-        super().__init__(**default_params)
-        for k in default_params:
-            del self[k]
+        super().__init__()
+        for k, v in default_params.items():
+            self.setdefault(k, v)
 
     def __setitem__(self, key, value):
         if type(value) != self.default_params()[key]:
@@ -167,4 +167,28 @@ class FixedTypeDict(FixedDict):
         return self.default_params()[key]
 
 
-__all__ = ['FixedDict', 'FixedTypeDict', 'EmptyKey', 'OutOfRange', 'TypeOfValueError']
+class UniqueTypeDict(AttrDict):
+    """
+    Dict only access one type for all element.
+    Raise TypeOfValueError if type of set value not same as type defined before.
+
+    Example:
+        your_dict = UniqueTypeDict(int)
+        your_dict.a = 1     # it's working
+        your_dict.a = 2.0   # raise error TypeOfValueError
+    """
+    def __init__(self, _type):
+        super().__init__(_type=_type)
+
+    def __setitem__(self, key, value):
+        if type(value) != self.type:
+            raise TypeOfValueError
+
+        super().__setitem__(key, value)
+
+    @property
+    def type(self):
+        return super().__getitem__("_type")
+
+
+__all__ = ['FixedDict', 'FixedTypeDict', 'UniqueTypeDict', 'EmptyKey', 'OutOfRange', 'TypeOfValueError']
