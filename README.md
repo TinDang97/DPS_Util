@@ -48,8 +48,8 @@ Ver 1.1.2:
 - Changed FixedDict -> DefaultDict
 - Changed FixedTypeDict -> DefaultTypeDict
 
-Ver 1.1.3:
-- Fix bugs of attrdict.UniqueTypeDict
+Ver 1.1.3-1.1.4:
+- Fix bugs of attrdict.UniqueTypeDict, attrdict.DefaultDict
 
 ### Todo:
 

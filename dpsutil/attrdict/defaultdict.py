@@ -153,6 +153,9 @@ class DefaultDict(AttrDict):
         self.from_array(decompress_list(buffer))
         return self
 
+    def to_buffer(self):
+        return self.__bytes__()
+
     def setdefault(self, k, d=None):
         """
         Change default value of key.
