@@ -14,7 +14,7 @@ class TypeOfValueError(Exception):
     pass
 
 
-class FixedDict(AttrDict):
+class DefaultDict(AttrDict):
     """
     FixedDict help cover your dict with (keys, values) that was defined before. Implement from AttrDict
 
@@ -37,9 +37,6 @@ class FixedDict(AttrDict):
     """
 
     def __init__(self, **default_params):
-        if not default_params:
-            raise EmptyKey("Not existed any keys.")
-
         super().__init__({'default_params': AttrDict(default_params), "curr_params": AttrDict(default_params)})
 
     def __repr__(self):
@@ -96,19 +93,34 @@ class FixedDict(AttrDict):
         return self.__getitem__(k)
 
     def clear(self, *args):
+        """
+        Set value of key to default if provided.
+        If not provide any key, clear all key of dict.
+        :return:
+        """
         if not args:
-            self.from_dict(self.default_params())
+            self._current_params().update(self.default_params())
             return
 
         for k in args:
             del self[k]
 
     def pop(self, k):
+        """
+        Like `clear` but require key.
+        :return:
+        """
         value = self[k]
         del self[k]
         return value
 
     def from_array(self, arr):
+        """
+        Recover data from array.
+        Make sure arrange of keys correctly.
+        :param arr:
+        :return:
+        """
         assert isinstance(arr, list)
         if not self.__len__() == arr.__len__():
             raise OutOfRange(f"Require only {self.__len__()} params. But got {arr.__len__()}")
@@ -117,22 +129,42 @@ class FixedDict(AttrDict):
             self[key] = arr[idx]
 
     def to_array(self):
+        """
+        Like `values` but return `list` instead.
+        :return:
+        """
         return list(self.values())
 
     def __bytes__(self):
+        """
+        This compress all values of dict. Ref: "to_array"
+        :return:
+        """
         return compress_list(self.to_array())
 
     def from_buffer(self, buffer):
+        """
+        Decompress all values of dict. Ref: "from_array"
+
+        ***Make sure arrange of keys correctly.
+        :return:
+        """
         assert isinstance(buffer, bytes)
         self.from_array(decompress_list(buffer))
         return self
 
     def setdefault(self, k, d=None):
-        if k not in self.default_params():
-            raise KeyNotFound
+        """
+        Change default value of key.
+        :return:
+        """
         self.default_params().__setitem__(k, d)
 
     def update(self, params, **kwargs):
+        """
+        Fast way to set item via dict and kwargs
+        :return:
+        """
         assert isinstance(params, dict)
 
         params.update(kwargs)
@@ -141,7 +173,7 @@ class FixedDict(AttrDict):
                 self[k] = params[k]
 
 
-class FixedTypeDict(FixedDict):
+class DefaultTypeDict(DefaultDict):
     """
     FixedTypeDict help cover your dict when set item. Implement from FixedDict.
 
@@ -153,6 +185,8 @@ class FixedTypeDict(FixedDict):
     def __init__(self, **default_params):
         super().__init__()
         for k, v in default_params.items():
+            if type(v) is not type:
+                raise ValueError(f"Value must be class. {k}: {v}")
             self.setdefault(k, v)
 
     def __setitem__(self, key, value):
@@ -167,7 +201,7 @@ class FixedTypeDict(FixedDict):
         return self.default_params()[key]
 
 
-class UniqueTypeDict(AttrDict):
+class UniqueTypeDict(DefaultDict):
     """
     Dict only access one type for all element.
     Raise TypeOfValueError if type of set value not same as type defined before.
@@ -178,17 +212,18 @@ class UniqueTypeDict(AttrDict):
         your_dict.a = 2.0   # raise error TypeOfValueError
     """
     def __init__(self, _type):
-        super().__init__(_type=_type)
+        super().__init__()
+        self.setdefault('_type', _type)
 
     def __setitem__(self, key, value):
         if type(value) != self.type:
             raise TypeOfValueError
 
-        super().__setitem__(key, value)
+        self._current_params().__setitem__(key, value)
 
     @property
     def type(self):
-        return super().__getitem__("_type")
+        return self.default_params()['_type']
 
 
-__all__ = ['FixedDict', 'FixedTypeDict', 'UniqueTypeDict', 'EmptyKey', 'OutOfRange', 'TypeOfValueError']
+__all__ = ['DefaultDict', 'DefaultTypeDict', 'UniqueTypeDict', 'EmptyKey', 'OutOfRange', 'TypeOfValueError']

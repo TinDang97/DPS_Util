@@ -1,2 +1,2 @@
 from .attrdict import *
-from .fixdict import *
+from .defaultdict import *

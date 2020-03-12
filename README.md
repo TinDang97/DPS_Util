@@ -42,6 +42,12 @@ Ver 1.1.1:
 - Fix bugs
 - Added UniqueTypeDict
 
+Ver 1.1.2:
+- Fix bugs
+- Changed module fixdict -> defaultdict
+- Changed FixedDict -> DefaultDict
+- Changed FixedTypeDict -> DefaultTypeDict
+
 ### Todo:
 
 - Numpy Pool -> Cache Algorithm in RAM
