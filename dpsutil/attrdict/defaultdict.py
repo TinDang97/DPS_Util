@@ -60,9 +60,6 @@ class DefaultDict(AttrDict):
     def _current_params(self):
         return super().get('curr_params')
 
-    def __iter__(self):
-        return iter(self._current_params())
-
     def __getitem__(self, item):
         if item in self._current_params():
             return self._current_params()[item]
@@ -89,6 +86,18 @@ class DefaultDict(AttrDict):
             if not force:
                 raise e
 
+    def __contains__(self, item):
+        return self._current_params().__contains__(item)
+
+    def __eq__(self, other):
+        return self._current_params().__eq__(other)
+
+    def __iter__(self):
+        return self._current_params().__iter__()
+
+    def __bool__(self):
+        return self._current_params().__bool__()
+
     def get(self, k):
         return self.__getitem__(k)
 
@@ -113,6 +122,11 @@ class DefaultDict(AttrDict):
         value = self[k]
         del self[k]
         return value
+
+    def popitem(self):
+        current_params = self._current_params().copy()
+        self.clear()
+        return current_params
 
     def from_array(self, arr):
         """

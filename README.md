@@ -48,7 +48,7 @@ Ver 1.1.2:
 - Changed FixedDict -> DefaultDict
 - Changed FixedTypeDict -> DefaultTypeDict
 
-Ver 1.1.3-1.1.6:
+Ver 1.1.3-1.1.7:
 - Fix bugs of attrdict.AttrDict, attrdict.UniqueTypeDict, attrdict.DefaultDict
 - Fix bugs of compress_list, decompress_list
 
