@@ -50,6 +50,7 @@ Ver 1.1.2:
 
 Ver 1.1.3-1.1.4:
 - Fix bugs of attrdict.UniqueTypeDict, attrdict.DefaultDict
+- Fix bugs of compress_list, decompress_list
 
 ### Todo:
 

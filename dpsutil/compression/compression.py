@@ -45,12 +45,12 @@ def decompress_ndarray(binary: bytes) -> numpy.ndarray:
 
 def compress_list(array: list, compress_type=COMPRESS_FASTEST, nthreads=blosc.ncores) -> bytes:
     assert type(array) is list
-    return compress_ndarray(numpy.array(array), compress_type=compress_type, nthreads=nthreads)
+    return compress(pickle.dumps(array), compress_type=compress_type, nthreads=nthreads)
 
 
 def decompress_list(buffer: bytes):
     assert type(buffer) is bytes
-    return decompress_ndarray(buffer).tolist()
+    return pickle.loads(decompress(buffer))
 
 
 __all__ = ['compress', 'decompress', 'compress_ndarray', 'decompress_ndarray', 'compress_list', 'decompress_list',
