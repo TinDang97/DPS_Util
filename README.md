@@ -48,6 +48,9 @@ Ver 1.1.2:
 - Changed FixedDict -> DefaultDict
 - Changed FixedTypeDict -> DefaultTypeDict
 
+Ver 1.1.3:
+- Fix bugs of attrdict.UniqueTypeDict
+
 ### Todo:
 
 - Numpy Pool -> Cache Algorithm in RAM

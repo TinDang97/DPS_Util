@@ -213,6 +213,8 @@ class UniqueTypeDict(DefaultDict):
     """
     def __init__(self, _type):
         super().__init__()
+        if type(_type) is not type:
+            raise TypeError(f"Only support type class. But got {_type}")
         self.setdefault('_type', _type)
 
     def __setitem__(self, key, value):
