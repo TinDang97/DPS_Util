@@ -25,5 +25,8 @@ class AttrDict(attrdict.AttrDict):
     def __repr__(self):
         return dict(self).__repr__()
 
+    def copy(self):
+        return AttrDict(super().copy())
+
 
 __all__ = ['AttrDict', 'KeyNotFound']
