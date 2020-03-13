@@ -56,7 +56,10 @@ Ver 1.1.8:
 - Added Environment
 
 Ver 1.1.9:
-- Added Environment.to_lower -> Useful when extracting to kwarg
+- Added Environment.to_lower -> Useful when extracting to kwarg.
+
+Ver 1.1.10:
+- Changed default compress_type to COMPRESS_BEST of DefaultDict.
 
 ### Todo:
 
