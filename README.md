@@ -52,6 +52,9 @@ Ver 1.1.3-1.1.7:
 - Fix bugs of attrdict.AttrDict, attrdict.UniqueTypeDict, attrdict.DefaultDict
 - Fix bugs of compress_list, decompress_list
 
+Ver 1.1.8:
+- Added Environment
+
 ### Todo:
 
 - Numpy Pool -> Cache Algorithm in RAM
@@ -113,6 +116,10 @@ _*Note: all function execute in numpy._
 - **FixedDict**: help cover your dict with (keys, values) that was defined before. Implement from AttrDict
 - **FixedTypeDict**: help cover your dict when set item. Implement from FixedDict.
 - **UniqueTypeDict**: dict only access one type for all element.
+
+
+#### Environement:
+- **Environment**: Auto pair environment parameters fit with default, which provided before. 
 
 #### Other:
 
