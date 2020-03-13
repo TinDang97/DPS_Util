@@ -67,5 +67,13 @@ class Environment(DefaultDict):
     def __setitem__(self, key, value):
         return super().__setitem__(self._cvt_key(key), value)
 
+    def to_lower(self):
+        curr = self.copy()
+        for k in list(curr.keys()):
+            value = curr.pop(k)
+            curr[k.lower()] = value
+
+        return curr
+
 
 __all__ = ['Environment']

@@ -55,6 +55,9 @@ Ver 1.1.3-1.1.7:
 Ver 1.1.8:
 - Added Environment
 
+Ver 1.1.9:
+- Added Environment.to_lower -> Useful when extracting to kwarg
+
 ### Todo:
 
 - Numpy Pool -> Cache Algorithm in RAM
