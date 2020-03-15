@@ -112,7 +112,7 @@ class DefaultDict(AttrDict):
             return
 
         for k in args:
-            del self[k]
+            self.__setitem__(k, self.default_params().__getitem__(k))
 
     def pop(self, k):
         """
@@ -170,12 +170,13 @@ class DefaultDict(AttrDict):
     def to_buffer(self, compress_type=COMPRESS_BEST):
         return compress_list(self.to_array(), compress_type=compress_type)
 
-    def setdefault(self, k, d=None):
+    def setdefault(self, k, v=None, **kwargs):
         """
         Change default value of key.
         :return:
         """
-        self.default_params().__setitem__(k, d)
+        kwargs.update({k: v})
+        self.default_params().update(kwargs)
 
     def update(self, params, **kwargs):
         """

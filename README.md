@@ -61,6 +61,9 @@ Ver 1.1.9:
 Ver 1.1.10:
 - Changed default compress_type to COMPRESS_BEST of DefaultDict.
 
+Ver 1.1.11:
+- Fix bugs DefaultDict
+
 ### Todo:
 
 - Numpy Pool -> Cache Algorithm in RAM
