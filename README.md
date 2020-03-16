@@ -58,8 +58,10 @@ Ver 1.1.8:
 Ver 1.1.9:
 - Added Environment.to_lower -> Useful when extracting to kwarg.
 
-Ver 1.1.10-1.1.12:
+Ver 1.1.10-1.1.13:
 - Fix bugs attrdict
+- Changed hashfunc default from sha1 -> md5
+
 
 ### Todo:
 
