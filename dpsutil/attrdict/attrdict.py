@@ -25,9 +25,9 @@ class AttrDict(attrdict.AttrDict):
         string = ""
         for k, v in self.items():
             if string:
-                string = f"{string} | {k} = {v}"
+                string = f'{string} | {k}="{v}"'
             else:
-                string = f"| {k} = {v}"
+                string = f'| {k}="{v}"'
         return f"{string} |"
 
     def __str__(self):

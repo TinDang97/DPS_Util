@@ -35,6 +35,7 @@ class Environment(DefaultDict):
                           REDIS_HOST='localhost', REDIS_PORT='6379', REDIS_PASSWORD=None, REDIS_EXPIRE_TIME=60)
 
     """
+
     def __init__(self, **default_params):
         super().__init__()
 
@@ -68,7 +69,8 @@ class Environment(DefaultDict):
         if key not in self.default_params():
             raise KeyNotFound
 
-        if type(value) != type(self.default_params()[key]):
+        if type(value) != type(self.default_params()[key]) \
+                and value is not None and self.default_params()[key] is not None:
             value = type(self.default_params()[key])(value)
 
         return super().__setitem__(self._cvt_key(key), value)

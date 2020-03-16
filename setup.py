@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setup(name='dpsutil',
-      version='1.1.17',
+      version='1.1.18',
       description='This repository contain all util',
       long_description=long_description,
       long_description_content_type="text/markdown",
