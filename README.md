@@ -66,7 +66,7 @@ Ver 1.1.14:
 - Fix bugs, casting type when set value.
 
 Ver 1.1.15:
-- Support __call__ of DefaultDict, which update data from buffer or dict.
+- Support __call__ of DefaultDict, which update data from buffer.
 
 ### Todo:
 
