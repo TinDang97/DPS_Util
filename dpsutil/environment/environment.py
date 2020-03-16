@@ -65,7 +65,10 @@ class Environment(DefaultDict):
         return super().__getitem__(self._cvt_key(key))
 
     def __setitem__(self, key, value):
-        return super().__setitem__(self._cvt_key(key), value)
+        if key not in self.default_params():
+            raise KeyNotFound
+
+        return super().__setitem__(self._cvt_key(key), type(self.default_params()[key])(value))
 
     def to_lower(self):
         curr = self.copy()

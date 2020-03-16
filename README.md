@@ -62,6 +62,9 @@ Ver 1.1.10-1.1.13:
 - Fix bugs attrdict
 - Changed hashfunc default from sha1 -> md5
 
+Ver 1.1.14:
+- Fix bugs, casting type when set value.
+
 
 ### Todo:
 
