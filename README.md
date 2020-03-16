@@ -38,17 +38,13 @@ Ver 1.0.3:
 Ver 1.1.0:
 - Added AttrDict, FixedDict, FixedTypeDict
 
-Ver 1.1.1:
+Ver 1.1.1-1.1.7:
 - Fix bugs
 - Added UniqueTypeDict
-
-Ver 1.1.2:
 - Fix bugs
 - Changed module fixdict -> defaultdict
 - Changed FixedDict -> DefaultDict
 - Changed FixedTypeDict -> DefaultTypeDict
-
-Ver 1.1.3-1.1.7:
 - Fix bugs of attrdict.AttrDict, attrdict.UniqueTypeDict, attrdict.DefaultDict
 - Fix bugs of compress_list, decompress_list
 
@@ -58,14 +54,12 @@ Ver 1.1.8:
 Ver 1.1.9:
 - Added Environment.to_lower -> Useful when extracting to kwarg.
 
-Ver 1.1.10-1.1.13:
+Ver 1.1.10-1.1.15:
 - Fix bugs attrdict
 - Changed hashfunc default from sha1 -> md5
-
-Ver 1.1.14:
 - Fix bugs, casting type when set value.
 
-Ver 1.1.15:
+Ver 1.1.16:
 - Support __call__ of DefaultDict, which update data from buffer.
 
 ### Todo:
