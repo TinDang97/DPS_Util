@@ -98,6 +98,16 @@ class DefaultDict(AttrDict):
     def __bool__(self):
         return self._current_params().__bool__()
 
+    def __call__(self, data):
+        assert isinstance(data, (dict, bytes))
+        self.clear()
+
+        if type(data) == bytes:
+            self.from_buffer(data)
+        else:
+            self.update(data)
+        return self
+
     def get(self, k):
         return self.__getitem__(k)
 
