@@ -99,13 +99,9 @@ class DefaultDict(AttrDict):
         return self._current_params().__bool__()
 
     def __call__(self, data):
-        assert isinstance(data, (dict, bytes))
+        assert isinstance(data, bytes)
         self.clear()
-
-        if type(data) == bytes:
-            self.from_buffer(data)
-        else:
-            self.update(data)
+        self.from_buffer(data)
         return self
 
     def get(self, k):
