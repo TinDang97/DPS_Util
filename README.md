@@ -59,8 +59,9 @@ Ver 1.1.10-1.1.15:
 - Changed hashfunc default from sha1 -> md5
 - Fix bugs, casting type when set value.
 
-Ver 1.1.16:
+Ver 1.1.16-1.1.17:
 - Support __call__ of DefaultDict, which update data from buffer.
+- Fix bugs Environment
 
 ### Todo:
 
