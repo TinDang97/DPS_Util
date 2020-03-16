@@ -1,5 +1,5 @@
 from .attrdict import AttrDict, KeyNotFound
-from ..compression import compress_list, decompress_list, COMPRESS_BEST
+from ..compression import compress_list, decompress_list, COMPRESS_FASTEST
 
 
 class EmptyKey(Exception):
@@ -154,7 +154,7 @@ class DefaultDict(AttrDict):
         This compress all values of dict. Ref: "to_array"
         :return:
         """
-        return compress_list(self.to_array(), compress_type=COMPRESS_BEST)
+        return compress_list(self.to_array(), compress_type=COMPRESS_FASTEST)
 
     def from_buffer(self, buffer):
         """
@@ -167,7 +167,7 @@ class DefaultDict(AttrDict):
         self.from_array(decompress_list(buffer))
         return self
 
-    def to_buffer(self, compress_type=COMPRESS_BEST):
+    def to_buffer(self, compress_type=COMPRESS_FASTEST):
         return compress_list(self.to_array(), compress_type=compress_type)
 
     def setdefault(self, k, v=None, **kwargs):

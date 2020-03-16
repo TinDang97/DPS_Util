@@ -22,7 +22,16 @@ class AttrDict(attrdict.AttrDict):
         return super().get(item)
 
     def __repr__(self):
-        return dict(self).__repr__()
+        string = ""
+        for k, v in self.items():
+            if string:
+                string = f"{string} | {k} = {v}"
+            else:
+                string = f"| {k} = {v}"
+        return f"{string} |"
+
+    def __str__(self):
+        return dict(self).__str__()
 
     def copy(self):
         return AttrDict(self)
