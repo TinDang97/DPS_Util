@@ -63,6 +63,10 @@ Ver 1.1.16-1.1.18:
 - Support __call__ of DefaultDict, which update data from buffer.
 - Fix bugs Environment
 
+Ver 1.1.19:
+- Added pre-define output array of decompress_ndarray
+- Support add new key environment.
+
 ### Todo:
 
 - Numpy Pool -> Cache Algorithm in RAM

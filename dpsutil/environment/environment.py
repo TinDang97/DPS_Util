@@ -75,6 +75,10 @@ class Environment(DefaultDict):
 
         return super().__setitem__(self._cvt_key(key), value)
 
+    def add(self, env, value):
+        self.setdefault(env, value)
+        self.__setitem__(env, environ.get(env))
+
     def to_lower(self):
         curr = self.copy()
         for k in list(curr.keys()):

@@ -34,13 +34,18 @@ def compress_ndarray(vectors: numpy.ndarray, compress_type=COMPRESS_FASTEST, nth
     return pickle.dumps([buffer, vectors.dtype, vectors.shape])
 
 
-def decompress_ndarray(binary: bytes) -> numpy.ndarray:
+def decompress_ndarray(binary: bytes, output_array=None) -> numpy.ndarray:
     assert type(binary) is bytes
+    assert type(output_array) is numpy.ndarray
 
     buffer, dtype, shape = pickle.loads(binary)
-    arr = numpy.empty(shape, dtype)
-    blosc.decompress_ptr(buffer, arr.__array_interface__['data'][0])
-    return arr
+    if not output_array:
+        output_array = numpy.empty(shape, dtype)
+
+    assert output_array.shape == shape, "Array output's shape is't same as compressed array."
+
+    blosc.decompress_ptr(buffer, output_array.__array_interface__['data'][0])
+    return output_array
 
 
 def compress_list(array: list, compress_type=COMPRESS_FASTEST, nthreads=blosc.ncores) -> bytes:
