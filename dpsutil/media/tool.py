@@ -1,4 +1,5 @@
 import io
+from typing import Tuple, Optional, Union
 
 import cv2
 import re
@@ -89,9 +90,9 @@ def _convertToPx(value):
 def image_info(src):
     """
     Implement: https://github.com/shibukawa/imagesize_py
-    Return (width, height) for a given img file content
+    Return raw format, (width, height) for a given img file content
     no requirements
-    :rtype Tuple[int, int]
+    :rtype str, (int, int)
     """
     assert isinstance(src, (bytes, io.BufferedReader, str))
     height = -1
@@ -205,7 +206,7 @@ def image_info(src):
         if width == -1 or height == -1:
             raise ValueError("Invalid TIFF file: width and/or height IDS entries are missing.")
         image_format = TIFF_FORMAT
-    return image_format, width, height
+    return image_format, (width, height)
 
 
 def image_dpi(filepath):

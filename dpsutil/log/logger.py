@@ -1,12 +1,5 @@
 import logging
 import sys
-import os
-
-root_dir = 'logs/'
-try:
-    os.mkdir(root_dir)
-except:
-    pass
 
 
 def get_logger(logger_name='default'):
@@ -19,7 +12,7 @@ def get_logger(logger_name='default'):
     """
     log = logging.getLogger(logger_name)
     log.setLevel(logging.DEBUG)
-    log_format = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+    log_format = logging.Formatter("%(asctime)s - %(levelname)s | %(message)s")
 
     ch = logging.StreamHandler(sys.stdout)
     ch.setFormatter(log_format)
@@ -27,5 +20,9 @@ def get_logger(logger_name='default'):
     return log
 
 
-info_log = get_logger(logger_name='info')
-error_log = get_logger(logger_name='error')
+logger = get_logger(logger_name='info')
+write_info = logger.info
+write_warning = logger.warning
+write_error = logger.error
+
+__all__ = ['logger', 'get_logger', 'write_error', 'write_info', 'write_warning']

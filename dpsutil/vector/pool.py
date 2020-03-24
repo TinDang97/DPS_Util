@@ -17,8 +17,8 @@ TYPE_SUPPORT = [numpy.float16, numpy.float32, numpy.float64, numpy.float128,
 
 class VectorPool(object):
     """
-    VectorPool implement vector.memmap to save all vectors in disk with High Performance IO.
-    Easier than vector.memmap
+    VectorPool implement numpy.memmap to save all vectors in disk with High Performance IO.
+    Easier than numpy.memmap
     - Reduce RAM
     - Speedup IO
     - Auto Scale
@@ -172,7 +172,7 @@ class VectorPool(object):
         assert len(vectors.shape) == 2
         assert vectors.shape[1] == self.__dim__
 
-    def add(self, vectors: numpy.ndarray) -> list:
+    def add(self, vectors: numpy.ndarray):
         if isinstance(vectors, (list, tuple)):
             vectors = numpy.array(vectors, dtype=self.dtype)
 
@@ -185,7 +185,6 @@ class VectorPool(object):
         self.__check_input(vectors)
 
         min_shape = self.length + vectors.shape[0]
-        added_id = list(range(self.length, min_shape))
 
         while min_shape > self.__vector_pool__.shape[0]:
             self.__increase_pool_size(min_shape)
@@ -198,7 +197,6 @@ class VectorPool(object):
             self.__table_writed__[idx] = True
 
         self.__length__ = min_shape
-        return added_id
 
     def remove(self, ids):
         assert isinstance(ids, (int, list, numpy.ndarray))
@@ -211,6 +209,7 @@ class VectorPool(object):
 
         remove_ids = numpy.array(self.__table_ids__)[ids]
 
+        # delete marked point
         for idx in remove_ids:
             self.__table_writed__[idx] = False
 
@@ -218,10 +217,15 @@ class VectorPool(object):
             del self.__table_ids__[idx]
 
         self.__length__ -= len(ids)
-        return self.__vector_pool__[remove_ids, :]
 
-    def pop(self, ids):
-        return self.remove(ids)
+    def pop(self, idx):
+        assert type(idx) is int
+
+        remove_idx = numpy.array(self.__table_ids__)[idx]
+        self.__table_writed__[remove_idx] = False
+        del self.__table_ids__[idx]
+        self.__length__ -= 1
+        return self.__vector_pool__[remove_idx]
 
     def clear(self):
         return self.remove(self.ids)
@@ -276,7 +280,6 @@ class VectorPool(object):
         with open(file_path, 'rb') as f:
             vector_pool = decompress_ndarray(f.read())
         self.add(vector_pool)
-        return self.__repr__()
 
 
 __all__ = ['PERFORMANCE_TYPE', 'DEFAULT_TYPE', 'TYPE_SUPPORT', 'VectorPool']
