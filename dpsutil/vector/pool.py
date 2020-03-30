@@ -15,51 +15,47 @@ TYPE_SUPPORT = [numpy.float16, numpy.float32, numpy.float64, numpy.float128,
                 numpy.int8, numpy.int16, numpy.int32, numpy.int64]
 
 
-class VectorPool(object):
+class VectorPoolBase(object):
     """
-    VectorPool implement numpy.memmap to save all vectors in disk with High Performance IO.
-    Easier than numpy.memmap
+    VectorPool implement numpy.ndarray to save all vectors in disk with High Performance IO.
+    Easier than numpy.memmap. Likely list.
     - Reduce RAM
     - Speedup IO
     - Auto Scale
     - Support backup and recovery data in a second.
-
-    Next version:
-    # TODO: buffer in ram that speed_up query.
-    # TODO: multi-process to solve large Pool
     """
     __MODEL_EXT__ = "vecp"
 
-    def __init__(self, dim, dtype=DEFAULT_TYPE):
+    def __init__(self, pool, size=MIN_SIZE, dtype=DEFAULT_TYPE):
         assert dtype in TYPE_SUPPORT
-        assert dim > 0
+        assert len(pool.shape) == 2
+        assert type(pool) in [numpy.ndarray, numpy.memmap]
+        assert pool.shape[0] == size and size > 0
 
-        self.__file_path__ = tempfile.mkstemp()[1]
-        self.__dim__ = dim
-        self.__vector_pool__ = numpy.memmap(self.__file_path__, shape=(MIN_SIZE, self.__dim__), dtype=dtype)
-        self.__table_writed__ = [False for _ in range(MIN_SIZE)]
-        self.__table_ids__ = []
+        self._vector_pool = pool
+        self._table_wrote = numpy.full(size, False, dtype=numpy.bool)
+        self._table_ids = []
+
         self.__dtype__ = dtype
         self.__length__ = 0
+        self._dim = pool.shape[1]
 
-    def __increase_pool_size(self, new_size):
+    def _increase_pool_size(self, new_size):
         new_size = (int(new_size / ALPHA_SIZE) + 1) * 1024
+        
+        self._table_wrote = list(self._table_wrote)
 
-        self.__table_writed__.extend([False for _ in range(self.__vector_pool__.shape[0], new_size)])
-        self.__vector_pool__ = numpy.memmap(self.__file_path__, shape=(new_size, self.__dim__), dtype=self.__dtype__)
-
-    def __del__(self):
-        if os.path.abspath(self.__file_path__).split("/")[1] == "tmp":
-            os.remove(self.__file_path__)
-
-    def __eq__(self, other):
-        return self.vectors() == other
+        for _ in range(self._vector_pool.shape[0], new_size):
+            self._table_wrote.append(False)
+        
+        self._table_wrote = numpy.array(self._table_wrote, dtype=numpy.bool)
+        return new_size
 
     def __len__(self):
         return self.length
 
     def __repr__(self):
-        return f"Stored: {self.length} vectors, dim: {self.__dim__}, type: {self.dtype}\n" \
+        return f"Stored: {self.length} vectors, dim: {self._dim}, type: {self.dtype}\n" \
                f"{self.vectors().__repr__()}"
 
     def __getitem__(self, *args, **kwargs):
@@ -70,132 +66,52 @@ class VectorPool(object):
 
     def __iter__(self):
         """Loop generate"""
-        return self.__vector_pool__.__iter__()
-
-    def __add__(self, other):
-        """equal a + b"""
-        if isinstance(other, VectorPool):
-            return self.vectors() + other.vectors
-        return self.vectors() + other
-
-    def __iadd__(self, other):
-        """equal a += b"""
-        if isinstance(other, VectorPool):
-            self.__vector_pool__[self.__ids__] += other.vectors
-        else:
-            self.__vector_pool__[self.__ids__] += other
-        return self
-
-    def __sub__(self, other):
-        """equal a - b"""
-        if isinstance(other, VectorPool):
-            return self.vectors() * other.vectors
-        return self.vectors() - other
-
-    def __isub__(self, other):
-        """equal a -= b"""
-        if isinstance(other, VectorPool):
-            self.__vector_pool__[self.__ids__] -= other.vectors
-        else:
-            self.__vector_pool__[self.__ids__] -= other
-        return self
-
-    def __mul__(self, other):
-        """equal a * b"""
-        if isinstance(other, VectorPool):
-            return self.vectors() * other.vectors
-        return self.vectors() * other
-
-    def __imul__(self, other):
-        """equal a *= b"""
-        if isinstance(other, VectorPool):
-            self.__vector_pool__[self.__ids__] *= other.vectors
-        else:
-            self.__vector_pool__[self.__ids__] *= other
-        return self
-
-    def __truediv__(self, other):
-        """equal a / b"""
-        if isinstance(other, VectorPool):
-            return self.vectors() / other.vectors
-        return self.vectors() / other
-
-    def __itruediv__(self, other):
-        """equal a /= b"""
-        if isinstance(other, VectorPool):
-            self.__vector_pool__[self.__ids__] /= other.vectors
-        else:
-            self.__vector_pool__[self.__ids__] /= other
-        return self
-
-    def __pow__(self, power, modulo=None):
-        return self.vectors()() ** power
+        return self._vector_pool.__iter__()
 
     def __str__(self):
         return self.__repr__()
 
-    def __abs__(self):
-        """abs(a)"""
-        return numpy.abs(self.vectors()())
-
     def __delitem__(self, key):
         self.remove(key)
 
-    def __getattr__(self, item):
-        assert hasattr(self.vectors(), item), "Not exist attribute!"
-        return getattr(self.vectors(), item)
-
-    def __exit__(self):
-        self.__del__()
-
     @property
     def shape(self):
-        return self.length, self.__dim__
+        return self.length, self._dim
 
     @property
     def vectors_size(self):
-        return self.__dim__
+        return self._dim
 
     @property
     def length(self):
         return self.__length__
 
     def vectors(self):
-        return self.__vector_pool__[self.__table_ids__, :]
+        return self._vector_pool[self._table_ids]
 
     @property
     def dtype(self):
-        return self.__vector_pool__.dtype
-
-    def __check_input(self, vectors):
-        assert isinstance(vectors, (tuple, list, numpy.ndarray, VectorPool))
-        assert len(vectors.shape) == 2
-        assert vectors.shape[1] == self.__dim__
+        return self._vector_pool.dtype
 
     def add(self, vectors: numpy.ndarray):
-        if isinstance(vectors, (list, tuple)):
-            vectors = numpy.array(vectors, dtype=self.dtype)
+        assert isinstance(vectors, numpy.ndarray)
 
-        if len(vectors.shape) < 2 and vectors.shape[0] == self.__dim__:
-            vectors = vectors.reshape(1, self.__dim__)
+        if len(vectors.shape) < 2 and vectors.shape[0] == self._dim:
+            vectors = vectors.reshape(1, self._dim)
 
         if 'float' in str(vectors.dtype) and 'float' in str(self.dtype) and vectors.dtype != self.dtype:
             vectors = vectors.astype(self.dtype)
 
-        self.__check_input(vectors)
-
         min_shape = self.length + vectors.shape[0]
+        self._increase_pool_size(min_shape)
 
-        while min_shape > self.__vector_pool__.shape[0]:
-            self.__increase_pool_size(min_shape)
+        write_ids = numpy.where(self._table_wrote == False)[0][:vectors.shape[0]]
 
-        write_ids = numpy.where(numpy.array(self.__table_writed__) == False)[0][:vectors.shape[0]]
-        self.__table_ids__.extend(list(write_ids))
-
-        self.__vector_pool__[write_ids, :] = vectors[:, :]
         for idx in write_ids:
-            self.__table_writed__[idx] = True
+            self._table_ids.append(idx)
+            self._table_wrote[idx] = True
 
+        self._vector_pool[write_ids, :] = vectors
         self.__length__ = min_shape
 
     def remove(self, ids):
@@ -207,56 +123,59 @@ class VectorPool(object):
         if isinstance(ids, int):
             ids = [ids]
 
-        remove_ids = numpy.array(self.__table_ids__)[ids]
+        remove_ids = [self._table_ids[idx] for idx in ids]
 
         # delete marked point
         for idx in remove_ids:
-            self.__table_writed__[idx] = False
+            self._table_wrote[idx] = False
 
         for idx in ids:
-            del self.__table_ids__[idx]
+            del self._table_ids[idx]
 
         self.__length__ -= len(ids)
 
     def pop(self, idx):
         assert type(idx) is int
 
-        remove_idx = numpy.array(self.__table_ids__)[idx]
-        self.__table_writed__[remove_idx] = False
-        del self.__table_ids__[idx]
+        remove_idx = self._table_ids[idx]
+        self._table_wrote[remove_idx] = False
+        del self._table_ids[idx]
         self.__length__ -= 1
-        return self.__vector_pool__[remove_idx]
+        return self._vector_pool[remove_idx]
 
     def clear(self):
-        return self.remove(self.ids)
+        # delete marked point
+        self._table_wrote[self._table_ids] = False
+        self._table_ids = []
+        self.__length__ = 0
 
-    def apply(self, func):
-        assert hasattr(func, '__call__'), f"Require function. But got {type(func)}"
-        self.__vector_pool__[self.__ids__] = func(self.vectors())
+    def __get_id(self, ids):
+        assert isinstance(ids, (int, list, tuple, numpy.ndarray))
+
+        if type(ids) is int:
+            get_ids = self._table_ids[ids]
+        elif type(ids) is tuple:
+            assert len(ids) == 1 and type(ids[0]) == slice
+            get_ids = self._table_ids.__getitem__(ids[0])
+        else:
+            get_ids = [self._table_ids[idx] for idx in ids]
+        return get_ids
 
     def get(self, ids):
-        assert isinstance(ids, (int, list, tuple, numpy.ndarray))
-        get_ids = numpy.array(self.__table_ids__)[ids]
-        return self.__vector_pool__[get_ids].view(type=numpy.ndarray)
+        return self._vector_pool[self.__get_id(ids)]
 
-    def set(self, ids, values):
-        assert isinstance(ids, (int, list, tuple, slice, numpy.ndarray, VectorPool))
-
-        if isinstance(values, VectorPool):
-            values = values.vectors
+    def set(self, ids, vectors):
+        assert isinstance(vectors, numpy.ndarray)
 
         if isinstance(ids, int):
+            assert len(vectors.shape) == 1 and vectors.shape[0] == self._dim
             ids = [ids]
-            values = [values]
+            vectors = vectors.reshape(1, self._dim)
 
-        if not isinstance(values, numpy.ndarray):
-            values = numpy.array(values, dtype=self.dtype)
+        assert vectors.shape[0] == len(ids)
+        assert vectors.shape[1] == self._dim
 
-        self.__check_input(values)
-        assert values.shape[0] == len(ids)
-
-        set_ids = numpy.array(self.__table_ids__)[ids]
-        self.__vector_pool__[set_ids] = values
+        self._vector_pool[self.__get_id(ids)] = vectors
 
     def save(self, file_name, folder=".", over_write=False):
         assert isinstance(file_name, str)
@@ -270,6 +189,7 @@ class VectorPool(object):
         with open(file_path, 'wb') as f:
             f.write(compress_ndarray(self.vectors()))
             f.flush()
+
         return file_path
 
     def load(self, file_path):
@@ -282,4 +202,36 @@ class VectorPool(object):
         self.add(vector_pool)
 
 
-__all__ = ['PERFORMANCE_TYPE', 'DEFAULT_TYPE', 'TYPE_SUPPORT', 'VectorPool']
+class VectorPool(VectorPoolBase):
+    def __init__(self, dim, size=MIN_SIZE, dtype=DEFAULT_TYPE):
+        pool = numpy.empty((size, dim), dtype=dtype)
+        super().__init__(pool, size=size, dtype=dtype)
+
+    def _increase_pool_size(self, new_size):
+        new_size = super()._increase_pool_size(new_size)
+        self._vector_pool.resize(new_size, self._dim)
+
+
+class VectorPoolMMap(VectorPoolBase):
+    def __init__(self, dim, size=MIN_SIZE, dtype=DEFAULT_TYPE):
+        self._file_path = tempfile.mkstemp()[1]
+        pool = numpy.memmap(self._file_path, shape=(size, dim), dtype=dtype)
+        super().__init__(pool, size=size, dtype=dtype)
+
+    def _increase_pool_size(self, new_size):
+        new_size = super()._increase_pool_size(new_size)
+        self._vector_pool = numpy.memmap(self._file_path, shape=(new_size, self._dim), dtype=self.__dtype__)
+
+    def __del__(self):
+        if os.path.abspath(self._file_path).split("/")[1] == "tmp":
+            os.remove(self._file_path)
+
+    def __exit__(self):
+        self.__del__()
+
+
+class VectorPoolCached(VectorPoolBase):
+    pass
+
+
+__all__ = ['PERFORMANCE_TYPE', 'DEFAULT_TYPE', 'TYPE_SUPPORT', 'VectorPool', 'VectorPoolMMap']

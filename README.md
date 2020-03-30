@@ -31,9 +31,9 @@ Ver 1.0.2:
 
 Ver 1.0.3:
 - Compression:
-    - Support list compression: _compress_list, decompres_list_
+- Support list compression: _compress_list, decompres_list_
 - Distance: 
-    - Change distance.function -> vector.distance
+- Change distance.function -> vector.distance
 
 Ver 1.1.0:
 - Added AttrDict, FixedDict, FixedTypeDict
@@ -51,21 +51,22 @@ Ver 1.1.1-1.1.7:
 Ver 1.1.8:
 - Added Environment
 
-Ver 1.1.9:
+Ver 1.1.9-1.1.18:
 - Added Environment.to_lower -> Useful when extracting to kwarg.
-
-Ver 1.1.10-1.1.15:
 - Fix bugs attrdict
 - Changed hashfunc default from sha1 -> md5
-- Fix bugs, casting type when set value.
-
-Ver 1.1.16-1.1.18:
 - Support __call__ of DefaultDict, which update data from buffer.
 - Fix bugs Environment
 
 Ver 1.1.19:
 - Added pre-define output array of decompress_ndarray
 - Support add new key environment.
+
+Ver 1.1.20:
+- Edit logger
+- Fix bugs vector.pool
+- Changed VectorPool base on numpy.mmap -> VectorPoolMMap
+- Added VectorPool base on numpy.ndarray
 
 ### Todo:
 
