@@ -36,11 +36,18 @@ def compress_ndarray(vectors: numpy.ndarray, compress_type=COMPRESS_FASTEST, nth
 
 def decompress_ndarray(binary: bytes, output_array=None) -> numpy.ndarray:
     assert type(binary) is bytes
-    assert type(output_array) is numpy.ndarray
+    assert type(output_array) in [numpy.ndarray, numpy.memmap, type(None)]
 
     buffer, dtype, shape = pickle.loads(binary)
-    if not output_array:
+    if output_array is None:
         output_array = numpy.empty(shape, dtype)
+    else:
+        assert dtype == output_array.dtype
+
+        if type(output_array) is numpy.ndarray:
+            output_array.resize(shape, refcheck=False)
+        else:
+            output_array = numpy.memmap(output_array.filename, shape=shape, dtype=dtype)
 
     assert output_array.shape == shape, "Array output's shape is't same as compressed array."
 

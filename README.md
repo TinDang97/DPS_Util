@@ -62,11 +62,13 @@ Ver 1.1.19:
 - Added pre-define output array of decompress_ndarray
 - Support add new key environment.
 
-Ver 1.1.20:
+Ver 1.1.20-1.1.21:
 - Edit logger
 - Fix bugs vector.pool
 - Changed VectorPool base on numpy.mmap -> VectorPoolMMap
 - Added VectorPool base on numpy.ndarray
+- Restructure VectorPoolBase -> Speed up, fix bugs
+- Added VectorPoolBase.insert
 
 ### Todo:
 
@@ -192,5 +194,5 @@ Ubuntu:
 ___
 
 Develop by: TinDang   
-OS: Ubuntu Bionic 18.4  
+OS: Ubuntu Bionic 18.04  
 Python: 3.6.9 stable
