@@ -70,9 +70,13 @@ Ver 1.1.20-1.1.21:
 - Restructure VectorPoolBase -> Speed up, fix bugs
 - Added VectorPoolBase.insert
 
+Ver 1.1.22:
+- Add document of compression, media module.
+- Fix bugs image
+- Change media.image.scale -> media.image.zoom
+
 ### Todo:
 
-- Numpy Pool -> Cache Algorithm in RAM
 - Sort -> implement natsort - https://github.com/SethMMorton/natsort
 - CV -> Find more util
 - Find & Add more functions
@@ -95,18 +99,25 @@ Ver 1.1.20-1.1.21:
 
 #### Vector Pool:
 
-- Implemented numpy.memmap with High Performance and control memory IO.
+__VectorPoolBase__ handle _numpy.ndarray_ that save a lot of RAM by re-use existed memory space.
+
+Easier than __numpy.ndarray__. Likely __list__.
+
+- Reduce RAM
+- High Speed IO
+- Auto Scale
+- Support backup and recovery data in a second.
 
 #### Media:
 
-Implemented OpenCV with:
+Implemented __OpenCV__ with:
 
 - TurboJPEG (https://github.com/lilohuang/PyTurboJPEG)
 - FFmpeg(https://github.com/kkroening/ffmpeg-python) 
 
 To: improve read & write (image, video) IO speed.
-- Faster than OpenCV:
-  - 2-6x in JPEG
+- Faster than __OpenCV__:
+  - 2-6x with JPEG Encoder
   - 1.1x with others.
 
 - Added some function which used frequently.

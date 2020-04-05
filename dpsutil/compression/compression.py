@@ -9,6 +9,13 @@ SPLIT_BYTES = b"<s<p>l>"
 
 
 def compress(data: bytes, compress_type=COMPRESS_FASTEST, nthreads=blosc.ncores) -> bytes:
+    """
+    compress(data[, compress_type=COMPRESS_FASTEST, nthreads=blosc.ncores])
+
+    High speed compress with multi-threading. Implement from blosc.compress
+
+    Raise ValueError if size of buffer larger than 2147483631 bytes.
+    """
     assert type(data) is bytes
     blosc.set_nthreads(nthreads)
 
@@ -18,11 +25,25 @@ def compress(data: bytes, compress_type=COMPRESS_FASTEST, nthreads=blosc.ncores)
 
 
 def decompress(binary: bytes) -> bytes:
+    """
+    decompress(binary[, output_array=None])
+    """
     assert type(binary) is bytes
     return blosc.decompress(binary)
 
 
-def compress_ndarray(vectors: numpy.ndarray, compress_type=COMPRESS_FASTEST, nthreads=blosc.ncores) -> bytes:
+def compress_ndarray(vectors, compress_type=COMPRESS_FASTEST, nthreads=blosc.ncores) -> bytes:
+    """
+    compress_ndarray(vectors[, compress_type=COMPRESS_FASTEST, nthreads=blosc.ncores])
+
+    High speed compress numpy.ndarray with multi-threading. Implement from blosc.compress
+
+    Raise ValueError if size of array larger than 2147483631 bytes.
+    Example: array with float32 have itemsize=4 and size=614400000 ((1200000, 512) at 2D array)
+    -> total size of array: 4*614400000 == 2457600000 bytes
+
+    You must split array to small pieces.
+    """
     assert type(vectors) is numpy.ndarray
     blosc.set_nthreads(nthreads)
 
@@ -35,6 +56,12 @@ def compress_ndarray(vectors: numpy.ndarray, compress_type=COMPRESS_FASTEST, nth
 
 
 def decompress_ndarray(binary: bytes, output_array=None) -> numpy.ndarray:
+    """
+    decompress_ndarray(binary[, output_array=None])
+
+    Decompress array from buffer.
+    Data will write in output_array if it is provided. Save time request memory spaces and avoid out of memory.
+    """
     assert type(binary) is bytes
     assert type(output_array) in [numpy.ndarray, numpy.memmap, type(None)]
 
@@ -56,11 +83,17 @@ def decompress_ndarray(binary: bytes, output_array=None) -> numpy.ndarray:
 
 
 def compress_list(array: list, compress_type=COMPRESS_FASTEST, nthreads=blosc.ncores) -> bytes:
+    """
+    Handle from pickle and compress
+    """
     assert type(array) is list
     return compress(pickle.dumps(array), compress_type=compress_type, nthreads=nthreads)
 
 
 def decompress_list(buffer: bytes):
+    """
+    Handle from pickle and decompress
+    """
     assert type(buffer) is bytes
     return pickle.loads(decompress(buffer))
 

@@ -75,7 +75,7 @@ class VideoIterator(object):
                         raise TimeoutError
                     self.get_lock.wait(remaining)
 
-                data = self.box.pop()
+                data = self.box.popleft()
                 self.put_lock.notify()
                 return data
 
@@ -266,6 +266,15 @@ class VideoCapture(object):
 
 
 def images2video(file_path, images_list, fps, output_size=(0, 0), over_write=False):
+    """
+    Make video file from sequence images.
+
+    *images_list: list path file of images.
+
+    Tip: `fast way get list of images`.
+    1) Get all file path by glob.glob
+    2) Sort with dpsutil.sort.natsorted
+    """
     if os.path.isfile(file_path) and not over_write:
         raise FileExistsError
 

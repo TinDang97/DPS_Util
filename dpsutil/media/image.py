@@ -10,6 +10,8 @@ from .constant import PX_BGR, PX_RGB, DEFAULT_QUALITY, INTER_DEFAULT, ENCODE_PNG
 
 """
 This tool implement from OpenCV. Can you find more options at https://github.com/opencv/opencv
+Drawing: https://docs.opencv.org/2.4/modules/core/doc/drawing_functions.html
+
 * All method still cover (WIDTH, HEIGHT)
 """
 
@@ -25,8 +27,8 @@ def imencode(img, encode_type=ENCODE_JPEG, quality=DEFAULT_QUALITY, color_format
     - encode_type: ENCODE_JPEG, ENCODE_PNG - Output format of image.
     - quality: set quality of image after encode. 0 -> 100. *Note: 100 - Lossless compression
     - color_format: Image - [B, G, R] or [R, G, B) - Format of color image input.
-    :return: buffer
-    :rtype: bytes
+
+    Faster 2-6x at JPEG encoder. Otherwise, 1.1x.
     """
     if encode_type == ENCODE_JPEG:
         color_format = TJPF_RGB if color_format == PX_RGB else TJPF_BGR
@@ -41,15 +43,14 @@ def imencode(img, encode_type=ENCODE_JPEG, quality=DEFAULT_QUALITY, color_format
     return buffer
 
 
-def imdecode(buffer, color_format=PX_BGR):
+def imdecode(buffer, color_format=PX_BGR) -> numpy.ndarray:
     """
     This function implement from cv2.imencode.
     Ref: https://docs.opencv.org/2.4/modules/highgui/doc/reading_and_writing_images_and_video.html#imdecode
     Options:
     - color_format: Image - [B, G, R] or [R, G, B) - Format of color image input.
-    :rtype: numpy.ndarray
     """
-    ext, _, _ = image_info(buffer)
+    ext, (_, _) = image_info(buffer)
 
     if ext in [JPEG_FORMAT, JPEG2000_FORMAT]:
         color_format = TJPF_RGB if color_format == PX_RGB else TJPF_BGR
@@ -62,6 +63,9 @@ def imdecode(buffer, color_format=PX_BGR):
 
 
 def imread(img_path, color_format=PX_BGR):
+    """
+    Read image from file with optimize of speed.
+    """
     assert isinstance(img_path, (str, io.BufferedIOBase))
 
     if type(img_path) is str:
@@ -72,6 +76,12 @@ def imread(img_path, color_format=PX_BGR):
 
 
 def imwrite(img, img_path, encode_type=ENCODE_JPEG, quality=95, color_format=PX_BGR, over_write=False):
+    """
+    Write image into file with best encoder.
+    Faster 2-6x at JPEG encoder. Otherwise, 1.1x.
+
+    color_format: current color format of image.
+    """
     assert isinstance(img_path, (str, io.BufferedIOBase))
 
     if isinstance(img_path, str):
@@ -91,7 +101,7 @@ def imwrite(img, img_path, encode_type=ENCODE_JPEG, quality=95, color_format=PX_
         img_path.write(imencode(img, encode_type=encode_type, quality=quality, color_format=color_format))
 
 
-def crop_image(img, box=(0, 0, 0, 0), margin_size=0):
+def crop_image(img, box=(0, 0, 0, 0), margin_size=0) -> numpy.ndarray:
     """
     Crop media with margin.
 
@@ -120,8 +130,7 @@ def crop_image(img, box=(0, 0, 0, 0), margin_size=0):
 
 def resize(img, size, keep_ratio=False, inter_method=INTER_DEFAULT):
     """
-    This function resize with keep_ratio
-    :return:
+    This function resize with keep_ratio. Auto downscale or upscale fit with image's height.
     """
     assert isinstance(img, numpy.ndarray)
 
@@ -143,18 +152,35 @@ def resize(img, size, keep_ratio=False, inter_method=INTER_DEFAULT):
     return cv2.resize(img, (new_width, new_height), interpolation=inter_method)
 
 
-def scale(img, ratio):
+def zoom(img, ratio, center=None) -> numpy.ndarray:
+    """
+    Zoom part of image at position.
+    position is center of image at default.
+
+    This's faster way than crop and resize.
+    """
     assert isinstance(img, numpy.ndarray)
+    assert type(center) in [type(None), tuple]
 
     if ratio == 1:
         return img
 
     (h, w) = img.shape[:2]
-    rotate_matix = cv2.getRotationMatrix2D((w // 2, h // 2), 0, float(ratio))
-    return cv2.warpAffine(img, rotate_matix, (h, w))
+
+    if type(center) is tuple:
+        assert len(center) == 2
+        assert 0 <= center[0] <= w and 0 <= center[1] <= h, "Out of image's length"
+    else:
+        center = (w // 2, h // 2)
+
+    rotate_matix = cv2.getRotationMatrix2D(center, 0, float(ratio))
+    return cv2.warpAffine(img, rotate_matix, (w, h))
 
 
-def rotate_bound(img, angle):
+def rotate_bound(img, angle) -> numpy.ndarray:
+    """
+    Rote image without crop image.
+    """
     (h, w) = img.shape[:2]
     (cX, cY) = (w // 2, h // 2)
 
@@ -170,17 +196,25 @@ def rotate_bound(img, angle):
     return cv2.warpAffine(img, rotate_matix, (new_w, new_h))
 
 
-def rotate_crop(img, angle, center=None):
+def rotate_crop(img, angle, center=None) -> numpy.ndarray:
+    """
+    Rotate image and crop part out of size.
+    """
+    assert type(center) in [type(None), tuple]
+
     (h, w) = img.shape[:2]
 
-    if not center:
+    if type(center) is tuple:
+        assert len(center) == 2
+        assert 0 <= center[0] <= w and 0 <= center[1] <= h, "Out of image's length"
+    else:
         center = (w // 2, h // 2)
 
     rotate_matix = cv2.getRotationMatrix2D(center, -angle, 1.0)
     return cv2.warpAffine(img, rotate_matix, (h, w))
 
 
-def draw_text(img, label, position, color=(0, 0, 255), scale_factor=1, thickness=1):
+def draw_text(img, label, position, color=(0, 0, 255), scale_factor=1, thickness=1) -> numpy.ndarray:
     """
     Draw text at position in image.
     - position: top-left of text
@@ -201,7 +235,7 @@ def draw_text(img, label, position, color=(0, 0, 255), scale_factor=1, thickness
                        fontFace=cv2.FONT_HERSHEY_DUPLEX, fontScale=scale_factor, color=color, thickness=thickness)
 
 
-def draw_square(img, position, color=(0, 255, 0)):
+def draw_square(img, position, color=(0, 255, 0)) -> numpy.ndarray:
     """
     Draw text at position in image.
     - position: top-left, bottom-right of square
@@ -256,6 +290,6 @@ def automatic_brightness_and_contrast(image, clip_hist_percent=1):
     return auto_result
 
 
-__all__ = ['imencode', 'imdecode', 'imread', 'imwrite', 'crop_image', 'resize', 'scale', 'rotate_bound', 'rotate_crop',
+__all__ = ['imencode', 'imdecode', 'imread', 'imwrite', 'crop_image', 'resize', 'zoom', 'rotate_bound', 'rotate_crop',
            'draw_text', 'draw_square', 'automatic_brightness_and_contrast', 'ENCODE_PNG', 'ENCODE_JPEG', 'PX_BGR',
            'PX_RGB']

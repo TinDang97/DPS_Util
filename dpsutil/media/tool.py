@@ -345,7 +345,7 @@ def poly2box(polygon):
     return x, y, x + w, y + h
 
 
-def show_image(img, windows_name, windows_size=(800, 600), windows_mode=cv2.WINDOW_NORMAL, show_time=1,
+def show_image(img, windows_name, windows_size=(800, 600), windows_mode=cv2.WINDOW_NORMAL, wait_time=1,
                key_press_exit="q"):
     """
     Show image
@@ -357,7 +357,7 @@ def show_image(img, windows_name, windows_size=(800, 600), windows_mode=cv2.WIND
     cv2.imshow(windows_name, img)
     cv2.resizeWindow(windows_name, *windows_size)
 
-    if cv2.waitKey(show_time) & 0xFF == ord(key_press_exit):
+    if cv2.waitKey(wait_time) & 0xFF == ord(key_press_exit):
         cv2.destroyWindow(windows_name)
         return False
     return True
