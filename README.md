@@ -75,6 +75,9 @@ Ver 1.1.22:
 - Fix bugs image
 - Change media.image.scale -> media.image.zoom
 
+Ver 1.1.23:
+- Fix bugs log
+
 ### Todo:
 
 - Sort -> implement natsort - https://github.com/SethMMorton/natsort

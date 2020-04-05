@@ -1,1 +1,1 @@
-from .logger import error_log, info_log
+from .logger import *
