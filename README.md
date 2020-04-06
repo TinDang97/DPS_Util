@@ -75,8 +75,9 @@ Ver 1.1.22:
 - Fix bugs image
 - Change media.image.scale -> media.image.zoom
 
-Ver 1.1.23:
+Ver 1.1.23-24:
 - Fix bugs log
+- Fix bugs VectorPoolMMap.MIN_SIZE
 
 ### Todo:
 

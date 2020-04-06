@@ -7,7 +7,7 @@ import numpy
 from dpsutil.compression import compress_ndarray, decompress_ndarray
 
 AUTO_SIZE = -1
-MIN_SIZE = 0
+MIN_SIZE = 8
 
 DEFAULT_TYPE = numpy.float32
 PERFORMANCE_TYPE = numpy.float16
