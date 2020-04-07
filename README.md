@@ -79,6 +79,11 @@ Ver 1.1.23-24:
 - Fix bugs log
 - Fix bugs VectorPoolMMap.MIN_SIZE
 
+Ver 1.1.25:
+- Fix bugs attrdict
+- Added add, remove method attrdict
+- Rename variable of pool.VectorPoolBase
+
 ### Todo:
 
 - Sort -> implement natsort - https://github.com/SethMMorton/natsort

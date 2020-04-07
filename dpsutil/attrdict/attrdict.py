@@ -24,11 +24,13 @@ class AttrDict(attrdict.AttrDict):
     def __repr__(self):
         string = ""
         for k, v in self.items():
+            if type(v) is str:
+                v = f"'{v}'"
             if string:
-                string = f'{string} | {k}="{v}"'
+                string = f"{string} | {k}={v}"
             else:
-                string = f'| {k}="{v}"'
-        return f"{string} |"
+                string = f"{k}={v}"
+        return f"{{{string}}}"
 
     def __str__(self):
         return dict(self).__str__()

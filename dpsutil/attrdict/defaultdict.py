@@ -61,8 +61,7 @@ class DefaultDict(AttrDict):
         return super().get('curr_params')
 
     def __getitem__(self, item):
-        if item in self._current_params():
-            return self._current_params()[item]
+        return self._current_params()[item]
 
     def __setitem__(self, key, value):
         if key not in self.default_params():
@@ -106,6 +105,9 @@ class DefaultDict(AttrDict):
 
     def get(self, k):
         return self.__getitem__(k)
+
+    def remove(self, key):
+        return self.__delitem__(key)
 
     def clear(self, *args):
         """
@@ -183,6 +185,7 @@ class DefaultDict(AttrDict):
         """
         kwargs.update({k: v})
         self.default_params().update(kwargs)
+        self._current_params().update(kwargs)
 
     def update(self, params, **kwargs):
         """
@@ -206,20 +209,43 @@ class DefaultTypeDict(DefaultDict):
         your_dict.a = 1     # It's working
         your_dict.a = 1.0   # Error TypeOfValueError
     """
-    def __init__(self, **default_params):
+    def __init__(self, _args=None, _kwargs=None, **default_params):
+        if _kwargs is None:
+            _kwargs = {}
+        if _args is None:
+            _args = []
+
+        assert type(_args) is list
+        assert isinstance(_kwargs, dict)
+
         super().__init__()
         for k, v in default_params.items():
             if type(v) is not type:
                 raise ValueError(f"Value must be class. {k}: {v}")
             self.setdefault(k, v)
 
-    def __setitem__(self, key, value):
+        self.setdefault('_args', _args)
+        self.setdefault('_kwargs', _kwargs)
+
+    def __setitem__(self, key, value=None):
+        if value is None:
+            value = self.type(key)(*self.default_params()['_args'], **self.default_params()['_kwargs'])
+
         if type(value) != self.default_params()[key]:
             raise TypeOfValueError
+
         super().__setitem__(key, value)
 
-    def __getitem__(self, item):
-        return self._current_params()[item]
+    def setdefault(self, k, v=None, **kwargs):
+        """
+        Change default value of key.
+        :return:
+        """
+        kwargs.update({k: v})
+        self.default_params().update(kwargs)
+
+    def add(self, key, value=None):
+        self.__setitem__(key, value)
 
     def type(self, key):
         return self.default_params()[key]
@@ -235,13 +261,30 @@ class UniqueTypeDict(DefaultDict):
         your_dict.a = 1     # it's working
         your_dict.a = 2.0   # raise error TypeOfValueError
     """
-    def __init__(self, _type):
+    def __init__(self, _type, _args=None, _kwargs=None):
         super().__init__()
+        if _kwargs is None:
+            _kwargs = {}
+        if _args is None:
+            _args = []
+
+        assert type(_args) is list
+        assert isinstance(_kwargs, dict)
+
         if type(_type) is not type:
             raise TypeError(f"Only support type class. But got {_type}")
-        self.setdefault('_type', _type)
 
-    def __setitem__(self, key, value):
+        self.setdefault('_type', _type)
+        self.setdefault('_args', _args)
+        self.setdefault('_kwargs', _kwargs)
+
+    def add(self, key, value=None):
+        self.__setitem__(key, value)
+
+    def __setitem__(self, key, value=None):
+        if value is None:
+            value = self.type(*self.default_params()['_args'], **self.default_params()['_kwargs'])
+
         if type(value) != self.type:
             raise TypeOfValueError
 
@@ -250,6 +293,14 @@ class UniqueTypeDict(DefaultDict):
     @property
     def type(self):
         return self.default_params()['_type']
+
+    def setdefault(self, k, v=None, **kwargs):
+        """
+        Change default value of key.
+        :return:
+        """
+        kwargs.update({k: v})
+        self.default_params().update(kwargs)
 
 
 __all__ = ['DefaultDict', 'DefaultTypeDict', 'UniqueTypeDict', 'EmptyKey', 'OutOfRange', 'TypeOfValueError']

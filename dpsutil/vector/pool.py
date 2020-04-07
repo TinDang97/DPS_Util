@@ -56,15 +56,15 @@ class VectorPoolBase(object):
         assert pool.shape[0] == size and size >= 0
 
         self._vector_pool = pool
-        self._dim = dim
-        self._used_indexes = []
-        self._unused_indexes = list(range(size))
+        self.__dim = dim
+        self.__used_indexes = []
+        self.__unused_indexes = list(range(size))
         self.__dtype = dtype
 
         locker = Lock()
         self.__locker_clean = Condition(locker)
         self.__locker_write = Condition(locker)
-        self._stop_cleaner = False
+        self.__stop_cleaner = False
         self.__relocating = False
         self.__interrupt_processing = False
         Thread(target=self.__relocation, daemon=True).start()
@@ -73,35 +73,35 @@ class VectorPoolBase(object):
         while 1:
             with self.__locker_clean:
                 self.__locker_clean.wait()
-                if self._stop_cleaner:
+                if self.__stop_cleaner:
                     break
 
-                if not self._unused_indexes or not self._used_indexes:
+                if not self.__unused_indexes or not self.__used_indexes:
                     continue
 
                 self.__relocating = True
-                get_indexes = numpy.argsort(-1 * numpy.asarray(self._used_indexes))
-                write_indexes = numpy.argsort(numpy.asarray(self._unused_indexes))
+                get_indexes = numpy.argsort(-1 * numpy.asarray(self.__used_indexes))
+                write_indexes = numpy.argsort(numpy.asarray(self.__unused_indexes))
 
                 for get_index, write_index in zip(get_indexes, write_indexes):
                     if self.__interrupt_processing:
                         break
 
-                    get_idx = self._used_indexes[get_index]
-                    write_idx = self._unused_indexes[write_index]
+                    get_idx = self.__used_indexes[get_index]
+                    write_idx = self.__unused_indexes[write_index]
 
                     if get_idx <= write_idx:
                         break
 
                     self._vector_pool[write_idx] = self._vector_pool[get_idx]
-                    self._unused_indexes[write_index] = get_idx
-                    self._used_indexes[get_index] = write_idx
+                    self.__unused_indexes[write_index] = get_idx
+                    self.__used_indexes[get_index] = write_idx
 
                 if self.__interrupt_processing:
                     self.__interrupt_processing = False
                 else:
-                    self._decrease_pool_size(self._unused_indexes.__len__())
-                    self._unused_indexes.clear()
+                    self._decrease_pool_size(self.__unused_indexes.__len__())
+                    self.__unused_indexes.clear()
 
                 self.__relocating = False
                 self.__locker_write.notify()
@@ -116,16 +116,16 @@ class VectorPoolBase(object):
         raise NotImplementedError("Pool must handle this method to decrease pool size.")
 
     def __len__(self):
-        return self._used_indexes.__len__()
+        return self.__used_indexes.__len__()
 
     def __repr__(self):
-        return f"Stored: {self.__len__()} vectors, dim: {self._dim}, type: {self.dtype}\n"
+        return f"Stored: {self.__len__()} vectors, dim: {self.__dim}, type: {self.dtype}\n"
 
     def __getitem__(self, *args, **kwargs):
         return self.get(args)
 
-    def __setitem__(self, ids, values):
-        self.set(ids, values)
+    def __setitem__(self, indexes, values):
+        self.set(indexes, values)
 
     def __iter__(self):
         """Loop generate"""
@@ -160,14 +160,14 @@ class VectorPoolBase(object):
         """
         :return: (length, dim)
         """
-        return self.__len__(), self._dim
+        return self.__len__(), self.__dim
 
     @property
     def vectors_size(self) -> int:
         """
         :return: dim of vector
         """
-        return self._dim
+        return self.__dim
 
     def vectors(self) -> numpy.ndarray:
         """
@@ -178,7 +178,7 @@ class VectorPoolBase(object):
                 self.__interrupt_processing = True
                 self.__locker_write.wait()
 
-            output = self._vector_pool[self._used_indexes]
+            output = self._vector_pool[self.__used_indexes]
             self.__locker_clean.notify()
         return output
 
@@ -189,17 +189,21 @@ class VectorPoolBase(object):
         """
         return self.__dtype
 
+    @property
+    def dim(self):
+        return self.__dim
+
     def _norm_input(self, indexes, vectors):
         assert isinstance(vectors, numpy.ndarray)
         assert type(indexes) in [int, list, slice, tuple, range, numpy.ndarray]
 
-        if type(indexes) is int and vectors.ndim == 1 and vectors.size == self._dim:
-            vectors = vectors.reshape(1, self._dim)
+        if type(indexes) is int and vectors.ndim == 1 and vectors.size == self.__dim:
+            vectors = vectors.reshape(1, self.__dim)
 
         if 'float' in str(vectors.dtype) and 'float' in str(self.dtype) and vectors.dtype != self.dtype:
             vectors = vectors.astype(self.dtype)
 
-        assert vectors.shape[1] == self._dim
+        assert vectors.shape[1] == self.__dim
         assert vectors.dtype == self.dtype
 
         if type(indexes) is int:
@@ -221,8 +225,8 @@ class VectorPoolBase(object):
     def add(self, vectors: numpy.ndarray):
         assert isinstance(vectors, numpy.ndarray)
 
-        if vectors.ndim == 1 and vectors.size == self._dim:
-            vectors = vectors.reshape(1, self._dim)
+        if vectors.ndim == 1 and vectors.size == self.__dim:
+            vectors = vectors.reshape(1, self.__dim)
 
         if 'float' in str(vectors.dtype) and 'float' in str(self.dtype) and vectors.dtype != self.dtype:
             vectors = vectors.astype(self.dtype)
@@ -233,23 +237,23 @@ class VectorPoolBase(object):
                 self.__interrupt_processing = True
                 self.__locker_write.wait()
 
-            if self._unused_indexes.__len__() < vectors.shape[0]:
+            if self.__unused_indexes.__len__() < vectors.shape[0]:
                 current_size = self._vector_pool.shape[0]
-                increase_size = vectors.shape[0] - self._unused_indexes.__len__()
-                self._unused_indexes.extend(range(current_size, current_size + increase_size))
+                increase_size = vectors.shape[0] - self.__unused_indexes.__len__()
+                self.__unused_indexes.extend(range(current_size, current_size + increase_size))
                 self._increase_pool_size(increase_size)
 
-            write_ids = range(vectors.shape[0])
-            empty_lst = numpy.asarray(self._unused_indexes)
+            write_indexes = range(vectors.shape[0])
+            empty_lst = numpy.asarray(self.__unused_indexes)
 
             mask = numpy.ones(empty_lst.size, dtype=numpy.bool)
-            mask[write_ids] = False
+            mask[write_indexes] = False
 
-            write_ids = empty_lst[write_ids]
-            self._vector_pool[write_ids] = vectors
-            self._used_indexes.extend(write_ids)
+            write_indexes = empty_lst[write_indexes]
+            self._vector_pool[write_indexes] = vectors
+            self.__used_indexes.extend(write_indexes)
 
-            self._unused_indexes = empty_lst[mask].tolist()
+            self.__unused_indexes = empty_lst[mask].tolist()
             self.__locker_clean.notify()
 
     def insert(self, indexes, vectors):
@@ -260,17 +264,17 @@ class VectorPoolBase(object):
                 self.__interrupt_processing = True
                 self.__locker_write.wait()
 
-            if self._unused_indexes.__len__() < indexes.__len__():
+            if self.__unused_indexes.__len__() < indexes.__len__():
                 current_size = self._vector_pool.shape[0]
-                increase_size = vectors.shape[0] - self._unused_indexes.__len__()
-                self._unused_indexes.extend(range(current_size, current_size + increase_size))
+                increase_size = vectors.shape[0] - self.__unused_indexes.__len__()
+                self.__unused_indexes.extend(range(current_size, current_size + increase_size))
                 self._increase_pool_size(increase_size)
 
-            write_ids = [self._unused_indexes.pop() for _ in range(len(indexes))]
-            self._vector_pool[write_ids] = vectors
+            write_indexes = [self.__unused_indexes.pop() for _ in range(len(indexes))]
+            self._vector_pool[write_indexes] = vectors
 
-            for idx, write_index in zip(indexes, write_ids):
-                self._used_indexes.insert(idx, write_index)
+            for idx, write_index in zip(indexes, write_indexes):
+                self.__used_indexes.insert(idx, write_index)
             self.__locker_clean.notify()
 
     def remove(self, indexes):
@@ -282,7 +286,7 @@ class VectorPoolBase(object):
         if isinstance(indexes, int):
             indexes = [indexes]
 
-        if numpy.max(indexes) >= self._used_indexes.__len__():
+        if numpy.max(indexes) >= self.__used_indexes.__len__():
             assert IndexError("Out of range!")
 
         with self.__locker_write:
@@ -291,15 +295,15 @@ class VectorPoolBase(object):
                 self.__locker_write.wait()
 
             # marked position to unwritten
-            lst = numpy.asarray(self._used_indexes)
+            lst = numpy.asarray(self.__used_indexes)
             remove_lst = lst[indexes]
 
             mask = numpy.ones(lst.size, dtype=numpy.bool)
             mask[indexes] = False
             list_remaining = lst[mask]
 
-            self._unused_indexes.extend(remove_lst.tolist())
-            self._used_indexes = list(list_remaining)
+            self.__unused_indexes.extend(remove_lst.tolist())
+            self.__used_indexes = list(list_remaining)
             self.__locker_clean.notify()
 
     def pop(self, idx=0):
@@ -310,8 +314,8 @@ class VectorPoolBase(object):
                 self.__interrupt_processing = True
                 self.__locker_write.wait()
 
-            remove_idx = self._used_indexes.pop(idx)
-            self._unused_indexes.append(remove_idx)
+            remove_idx = self.__used_indexes.pop(idx)
+            self.__unused_indexes.append(remove_idx)
             output = self._vector_pool[remove_idx].copy()
             self.__locker_clean.notify()
         return output
@@ -323,8 +327,8 @@ class VectorPoolBase(object):
                 self.__interrupt_processing = True
                 self.__locker_write.wait()
 
-            self._unused_indexes.clear()
-            self._used_indexes.clear()
+            self.__unused_indexes.clear()
+            self.__used_indexes.clear()
             self._decrease_pool_size(self._vector_pool.shape[0])
             self.__locker_clean.notify()
 
@@ -334,39 +338,39 @@ class VectorPoolBase(object):
                 self.__interrupt_processing = True
                 self.__locker_write.wait()
 
-            self._unused_indexes.clear()
-            self._used_indexes.clear()
+            self.__unused_indexes.clear()
+            self.__used_indexes.clear()
             self._decrease_pool_size(self._vector_pool.shape[0])
-            self._stop_cleaner = True
+            self.__stop_cleaner = True
             self.__locker_clean.notify()
 
-    def get(self, ids):
-        assert isinstance(ids, (int, list, tuple, numpy.ndarray))
+    def get(self, indexes):
+        assert isinstance(indexes, (int, list, tuple, numpy.ndarray))
 
-        if type(ids) is tuple and len(ids) == 1:
-            ids = ids[0]
+        if type(indexes) is tuple and len(indexes) == 1:
+            indexes = indexes[0]
 
         with self.__locker_write:
             if self.__relocating:
                 self.__interrupt_processing = True
                 self.__locker_write.wait()
 
-            if type(ids) in [int, slice]:
-                get_ids = self._used_indexes.__getitem__(ids)
+            if type(indexes) in [int, slice]:
+                get_indexes = self.__used_indexes.__getitem__(indexes)
             else:
-                get_ids = [self._used_indexes[idx] for idx in ids]
+                get_indexes = [self.__used_indexes[idx] for idx in indexes]
 
-            if not get_ids:
+            if not get_indexes:
                 return None
 
-            output = self._vector_pool[get_ids]
+            output = self._vector_pool[get_indexes]
             self.__locker_clean.notify()
         return output
 
     def set(self, indexes, vectors):
         indexes, vectors = self._norm_input(indexes, vectors)
 
-        if numpy.max(indexes) >= self._used_indexes.__len__():
+        if numpy.max(indexes) >= self.__used_indexes.__len__():
             assert IndexError("Out of range!")
 
         with self.__locker_write:
@@ -374,11 +378,23 @@ class VectorPoolBase(object):
                 self.__interrupt_processing = True
                 self.__locker_write.wait()
 
-            write_ids = [self._used_indexes[idx] for idx in indexes]
-            self._vector_pool[write_ids] = vectors
+            write_indexes = [self.__used_indexes[idx] for idx in indexes]
+            self._vector_pool[write_indexes] = vectors
             self.__locker_clean.notify()
 
-    def save(self, file_name, folder=".", over_write=False):
+    def save(self, file_name, folder=".", over_write=False, indexes=None) -> str:
+        """
+        Save all compressed array into file.
+
+        Raise ValueError if size of array larger than 2147483631 bytes.
+
+        Example: array with float32 have itemsize=4 and size=614400000 ((1200000, 512) at 2D array)
+        -> total size of array: 4*614400000 == 2457600000 bytes
+
+        You must split array to small pieces.
+
+        * File's path is defined by `{folder's path}/{file_name + POOL.__MODEL_EXT__}`
+        """
         assert isinstance(file_name, str)
         assert self.shape[0] != 0, "Vector pool is empty!"
 
@@ -393,7 +409,12 @@ class VectorPoolBase(object):
                 self.__locker_write.wait()
 
             with open(file_path, 'wb') as f:
-                f.write(compress_ndarray(self._vector_pool[self._used_indexes]))
+                if indexes is None:
+                    vectors = self._vector_pool[self.__used_indexes]
+                else:
+                    get_indexes = self.__used_indexes[indexes]
+                    vectors = self._vector_pool[get_indexes]
+                f.write(compress_ndarray(vectors))
             self.__locker_clean.notify()
         return file_path
 
@@ -415,8 +436,8 @@ class VectorPoolBase(object):
             with open(file_path, 'rb') as f:
                 self._vector_pool = decompress_ndarray(f.read(), output_array=self._vector_pool)
 
-            self._unused_indexes.clear()
-            self._used_indexes = list(range(self._vector_pool.__len__()))
+            self.__unused_indexes.clear()
+            self.__used_indexes = list(range(self._vector_pool.__len__()))
             self.__locker_clean.notify()
 
     def from_file(self, file_path):
@@ -436,6 +457,9 @@ class VectorPoolBase(object):
                 self.from_buffer(f.read())
 
     def from_buffer(self, buffer):
+        """
+        Add vectors from buffer
+        """
         assert type(buffer) is bytes
 
         with self.__locker_write:
@@ -447,13 +471,29 @@ class VectorPoolBase(object):
             self.add(vectors)
             self.__locker_clean.notify()
 
-    def to_bytes(self) -> bytes:
+    def to_bytes(self, indexes=None) -> bytes:
+        """
+        Compress array
+
+        Raise ValueError if size of array larger than 2147483631 bytes.
+
+        Example: array with float32 have itemsize=4 and size=614400000 ((1200000, 512) at 2D array)
+        -> total size of array: 4*614400000 == 2457600000 bytes
+
+        You must split array to small pieces.
+        """
         with self.__locker_write:
             if self.__relocating:
                 self.__interrupt_processing = True
                 self.__locker_write.wait()
 
-            output = compress_ndarray(self._vector_pool[self._used_indexes])
+            if indexes is None:
+                vectors = self._vector_pool[self.__used_indexes]
+            else:
+                get_indexes = self.__used_indexes[indexes]
+                vectors = self._vector_pool[get_indexes]
+
+            output = compress_ndarray(vectors)
             self.__locker_clean.notify()
         return output
 
@@ -469,13 +509,13 @@ class VectorPool(VectorPoolBase):
     """
 
     def _init_pool(self, shape, dtype):
-        return numpy.empty(shape, dtype=dtype)
+        return numpy.zeros(shape, dtype=dtype)
 
     def _increase_pool_size(self, size):
-        self._vector_pool.resize(self._vector_pool.shape[0] + size, self._dim)
+        self._vector_pool.resize(self._vector_pool.shape[0] + size, self.dim)
 
     def _decrease_pool_size(self, size):
-        self._vector_pool.resize(max(self._vector_pool.shape[0] - size, MIN_SIZE), self._dim)
+        self._vector_pool.resize(max(self._vector_pool.shape[0] - size, MIN_SIZE), self.dim)
 
 
 class VectorPoolMMap(VectorPoolBase):
@@ -495,11 +535,11 @@ class VectorPoolMMap(VectorPoolBase):
 
     def _increase_pool_size(self, size):
         self._vector_pool = numpy.memmap(self._vector_pool.filename,
-                                         shape=(self._vector_pool.shape[0] + size, self._dim), dtype=self.dtype)
+                                         shape=(self._vector_pool.shape[0] + size, self.dim), dtype=self.dtype)
 
     def _decrease_pool_size(self, size):
         self._vector_pool = numpy.memmap(self._vector_pool.filename,
-                                         shape=(max(self._vector_pool.shape[0] - size, MIN_SIZE), self._dim,),
+                                         shape=(max(self._vector_pool.shape[0] - size, MIN_SIZE), self.dim,),
                                          dtype=self.dtype)
 
 
