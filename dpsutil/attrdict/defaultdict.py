@@ -31,6 +31,15 @@ class DefaultDict(AttrDict):
 
         your_dict.a     # return: 5
 
+        # After clear data, default value will be set.
+        your_dict.clear('a')
+        your_dict.a     # return: 1
+
+        # Delete key.
+        del your_dict.a
+        /// or 
+        del your_dict['a']
+
     User case:
     - When you need to control your params or hyper config.
     - Make sure your dict only store some field.

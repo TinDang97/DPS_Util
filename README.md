@@ -85,6 +85,18 @@ Ver 1.1.25:
 - Rename variable of pool.VectorPoolBase
 
 ### Todo:
+- Attr support hint typing:
+
+Example:
+```
+class Location(object):
+    lat_long: tuple
+    grid_square: str
+    xy_coordinate: tuple
+
+Location.__annotations__
+{'lat_long': tuple, 'grid_square': str, 'xy_coordinate': tuple}
+```
 
 - Sort -> implement natsort - https://github.com/SethMMorton/natsort
 - CV -> Find more util
