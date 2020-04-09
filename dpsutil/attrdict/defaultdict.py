@@ -1,5 +1,6 @@
 from .attrdict import AttrDict, KeyNotFound
 from ..compression import compress_list, decompress_list, COMPRESS_FASTEST
+from inspect import isclass
 
 
 class EmptyKey(Exception):
@@ -196,17 +197,24 @@ class DefaultDict(AttrDict):
         self.default_params().update(kwargs)
         self._current_params().update(kwargs)
 
-    def update(self, params, **kwargs):
+    def update(self, _params=None, **kwargs):
         """
         Fast way to set item via dict and kwargs
         :return:
         """
-        assert isinstance(params, dict)
+        if _params is None:
+            _params = {}
 
-        params.update(kwargs)
-        for k in params:
+        assert isinstance(_params, dict)
+        _params.update(kwargs)
+        for k in _params:
             if k in self.default_params():
-                self[k] = params[k]
+                self[k] = _params[k]
+
+    @staticmethod
+    def fromkeys(*args, **kwargs):
+        _dict = super().fromkeys(*args, **kwargs)
+        return DefaultDict.__init__(**_dict)
 
 
 class DefaultTypeDict(DefaultDict):
@@ -280,12 +288,12 @@ class UniqueTypeDict(DefaultDict):
         assert type(_args) is list
         assert isinstance(_kwargs, dict)
 
-        if type(_type) is not type:
+        if not isclass(_type):
             raise TypeError(f"Only support type class. But got {_type}")
 
-        self.setdefault('_type', _type)
-        self.setdefault('_args', _args)
-        self.setdefault('_kwargs', _kwargs)
+        super().default_params().__setitem__('_type', _type)
+        super().default_params().__setitem__('_args', _args)
+        super().default_params().__setitem__('_kwargs', _kwargs)
 
     def add(self, key, value=None):
         self.__setitem__(key, value)
@@ -301,15 +309,17 @@ class UniqueTypeDict(DefaultDict):
 
     @property
     def type(self):
-        return self.default_params()['_type']
+        return super().default_params()['_type']
 
-    def setdefault(self, k, v=None, **kwargs):
-        """
-        Change default value of key.
-        :return:
-        """
-        kwargs.update({k: v})
-        self.default_params().update(kwargs)
+    def setdefault(*args, **kwargs):
+        raise AttributeError
+
+    def default_params(self):
+        raise AttributeError
+
+    @staticmethod
+    def fromkeys(*args, **kwargs):
+        raise AttributeError
 
 
 __all__ = ['DefaultDict', 'DefaultTypeDict', 'UniqueTypeDict', 'EmptyKey', 'OutOfRange', 'TypeOfValueError']
