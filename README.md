@@ -84,6 +84,15 @@ Ver 1.1.25-26:
 - Added add, remove method attrdict
 - Rename variable of pool.VectorPoolBase
 
+Ver 1.1.27:
+- Change namespace attrdict.UniqueTypeDict -> attrdict.TypedDict
+- Restructure attdict.AttrDict, attdict.DefaultDict, attrdict.TypedDict
+- Support annotations alias
+- Speed up attrdict
+- Support initial attrdict with iterable, generator.
+- Support to_buffer method with optimize compression.
+- Support recreate dict with from_buffer.
+- Lightweight than pickle.dumps
 
 ### Todo:
 - Attr support hint typing:
@@ -161,10 +170,13 @@ _*Note: all function execute in numpy._
 #### Attributes dict:
 
 - **AttrDict**: will help you get value of key via attributes. Implement attrdict.AttrDict
-- **FixedDict**: help cover your dict with (keys, values) that was defined before. Implement from AttrDict
-- **FixedTypeDict**: help cover your dict when set item. Implement from FixedDict.
-- **UniqueTypeDict**: dict only access one type for all element.
-
+- **DefaultDict**: help cover your dict with (keys, values) that was defined before. Implement from AttrDict
+- **TypedDict**: help cover your dict when set item. Implement from AttrDict.
+- **DefaultTypeDict**: dict only access one type for all element.
+- Support initial attrdict with iterable, generator.
+- Support to_buffer method with optimize compression.
+- Support recreate dict with from_buffer.
+- Lightweight than pickle.dumps
 
 #### Environement:
 - **Environment**: Auto pair environment parameters fit with default, which provided before. 

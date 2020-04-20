@@ -99,9 +99,9 @@ class VideoIterator(object):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self.stop()
+        self.close()
 
-    def stop(self):
+    def close(self):
         self.stream.terminate()
 
     def get_frame(self, time_out=30):

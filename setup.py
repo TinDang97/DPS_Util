@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setup(name='dpsutil',
-      version='1.1.26',
+      version='1.1.27',
       description='This repository contain all util',
       long_description=long_description,
       long_description_content_type="text/markdown",
@@ -22,6 +22,7 @@ setup(name='dpsutil',
             'ffmpeg-python==0.2.0',
             'natsort',
             'attrdict',
-            'PyTurboJPEG'
+            'PyTurboJPEG',
+            'opencv-python'
       ],
       python_requires='>=3.6')

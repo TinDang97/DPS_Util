@@ -1,4 +1,4 @@
-from ..attrdict import DefaultDict, KeyNotFound
+from ..attrdict import DefaultDict
 from os import environ
 
 
@@ -6,6 +6,8 @@ class Environment(DefaultDict):
     """
     Environment: Auto pair environment parameters fit with default, which provided before.
     Implement attrdict.DefaultDict
+
+    Auto check and broadcast to default value's type.
 
     Example:
         env = Environment(HOME="./", DEFAULT_KEY="default_value")
@@ -17,40 +19,47 @@ class Environment(DefaultDict):
 
     **Note: KEY must be upper or lower. Otherwise, raise KeyError
 
-    Compare:
-    # Regularly way. -> 491 characters
+    Compare (without space character):
+    # Regularly way. -> 433 characters
 
     configs = {
         'kafka_host': f'{os.environ.get('KAFKA_HOST', 'localhost')}:{os.environ.get('KAFKA_PORT', '9092')}',
         'kafka_user_name': os.environ.get('KAFKA_USER_NAME'),
         'kafka_password': os.environ.get('KAFKA_PASSWORD'),
-        'redis_host': f'{os.environ.get('REDIS_HOST', 'localhost')}:{os.environ.get('REDIS_PORT", '6379')}',
+        'redis_host': os.environ.get('REDIS_HOST', 'localhost'),
+        'redis_port': os.environ.get('REDIS_PORT", '6379'),
         'redis_password': os.environ.get('REDIS_PASSWORD'),
         'redis_expire_time': int(os.environ.get('REDIS_EXPIRE_TIME', 60))
     }
 
-    # With Environment -> 193 characters
+    # With Environment -> 185 characters
 
     configs = Environment(KAFKA_HOST='localhost', KAFKA_PORT='9092', KAFKA_USER_NAME=None, KAFKA_PASSWORD=None,
                           REDIS_HOST='localhost', REDIS_PORT='6379', REDIS_PASSWORD=None, REDIS_EXPIRE_TIME=60)
 
+    # Support annotations alias -> 192 characters:
+        class CustomEnv(Environment):
+            KAFKA_HOST: 'localhost'
+            KAFKA_PORT: '9092'
+            KAFKA_USER_NAME: None
+            KAFKA_PASSWORD: None
+            REDIS_HOST: 'localhost'
+            REDIS_PORT: '6379'
+            REDIS_PASSWORD: None
+            REDIS_EXPIRE_TIME: 60
     """
 
-    def __init__(self, **default_params):
-        super().__init__()
+    def __init__(self, *args, **default_params):
+        super().__init__(*args, **default_params)
 
-        # Add default key, value
-        for k, v in default_params.items():
+    def setdefault(self, _k=None, _v=None, **kwargs):
+        if _k:
+            kwargs.update({_k: _v})
+        for k, v in kwargs.items():
             k = self._cvt_key(k)
-            self.setdefault(k, v)
-            self.__setitem__(k, v)
-
-        # Update environ value fit with default_params.
-        for k, v in environ.items():
-            try:
-                self.__setitem__(k, v)
-            except KeyNotFound:
-                pass
+            super().setdefault(k, v)
+            if k in environ:
+                super().__setitem__(k, environ[k])
 
     @staticmethod
     def _cvt_key(key):
@@ -59,32 +68,48 @@ class Environment(DefaultDict):
 
         if not key.isupper():
             raise KeyError(f"Environment name must be {key.upper()} or {key.lower()}. But got: {key}")
-
         return key
 
+    def _cvt_value(self, key, value):
+        if value is not None and self.get_default(key) is not None \
+                and not isinstance(value, self.get_default(key).__class__):
+            try:
+                value = self.get_default(key).__class__(value)
+            except ValueError:
+                raise ValueError("Type of default is't same as set value. Change default before set.")
+        return value
+
     def __getitem__(self, key):
-        return super().__getitem__(self._cvt_key(key))
+        key = self._cvt_key(key)
+        return super().__getitem__(key)
 
     def __setitem__(self, key, value):
-        if key not in self.default_params():
-            raise KeyNotFound
+        key = self._cvt_key(key)
+        value = self._cvt_value(key, value)
+        return super().__setitem__(key, value)
 
-        if type(value) != type(self.default_params()[key]) \
-                and value is not None and self.default_params()[key] is not None:
-            value = type(self.default_params()[key])(value)
+    def __delitem__(self, key):
+        key = self._cvt_key(key)
+        return super().__delitem__(key)
 
-        return super().__setitem__(self._cvt_key(key), value)
+    def __getattr__(self, key):
+        key = self._cvt_key(key)
+        return super().__getattr__(key)
 
-    def add(self, env, value):
-        self.setdefault(env, value)
-        self.__setitem__(env, environ.get(env))
+    def __setattr__(self, key, value):
+        key = self._cvt_key(key)
+        value = self._cvt_value(key, value)
+        return super().__setattr__(value, value)
+
+    def __delattr__(self, key, **kwargs):
+        key = self._cvt_key(key)
+        return super().__delattr__(key)
 
     def to_lower(self):
         curr = self.copy()
         for k in list(curr.keys()):
             value = curr.pop(k)
             curr[k.lower()] = value
-
         return curr
 
 

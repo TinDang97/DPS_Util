@@ -5,8 +5,6 @@ import numpy
 COMPRESS_FASTEST = 0
 COMPRESS_BEST = 1
 
-SPLIT_BYTES = b"<s<p>l>"
-
 
 def compress(data: bytes, compress_type=COMPRESS_FASTEST, nthreads=blosc.ncores) -> bytes:
     """
@@ -90,7 +88,7 @@ def compress_list(array: list, compress_type=COMPRESS_FASTEST, nthreads=blosc.nc
     return compress(pickle.dumps(array), compress_type=compress_type, nthreads=nthreads)
 
 
-def decompress_list(buffer: bytes):
+def decompress_list(buffer: bytes) -> list:
     """
     Handle from pickle and decompress
     """

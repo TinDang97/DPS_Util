@@ -1,274 +1,213 @@
-from .attrdict import AttrDict, KeyNotFound
-from ..compression import compress_list, decompress_list, COMPRESS_FASTEST
 from inspect import isclass
+from typing import Tuple, Any, List
 
-
-class EmptyKey(Exception):
-    pass
-
-
-class OutOfRange(Exception):
-    pass
-
-
-class TypeOfValueError(Exception):
-    pass
+from .attrdict import AttrDict
 
 
 class DefaultDict(AttrDict):
     """
-    FixedDict help cover your dict with (keys, values) that was defined before. Implement from AttrDict
+    DefaultDict help cover your dict with (keys, values) that was defined before.
+    Implement from dpsutil.attrdict.AttrDict
 
     Example:
-        your_dict = FixedTypeDict(a=1, b=2)
+        your_dict = DefaultDict(a=1, b=2)
         # {}
         # Default: {'a': 1, 'b': 2}
         # Definitely, your dict empty but that will be filled by default_value
 
-        your_dict.a     # return: 1
+        your_dict.a    # return: 1
 
         # Next, you set key a=5
         your_dict.a = 5
+        your_dict.a    # return: 5
 
-        your_dict.a     # return: 5
-
-        # After clear data, default value will be set.
+        # After clear value, default value will be set.
         your_dict.clear('a')
-        your_dict.a     # return: 1
+        or
+        del your_dict['a']
+
+        your_dict.a    # return: 1
 
         # Delete key.
-        del your_dict.a
+        your
         /// or 
         del your_dict['a']
+
+    Supported annotations alias
 
     User case:
     - When you need to control your params or hyper config.
     - Make sure your dict only store some field.
     """
 
-    def __init__(self, **default_params):
-        super().__init__({'default_params': AttrDict(default_params), "curr_params": AttrDict(default_params)})
+    def get_default(self, key):
+        return super().__getattribute__(f"_{self.__class__.__name__}__default")[key]
 
-    def __repr__(self):
-        return self._current_params().__repr__()
+    def del_default(self, key) -> Tuple[Any]:
+        super().__delitem__(key)
+        return super().__getattribute__(f"_{self.__class__.__name__}__default").pop(key)
 
-    def __len__(self):
-        return self._current_params().__len__()
+    def setdefault(self, _k=None, _v=None, **kwargs):
+        """
+        Change default value of key.
 
-    def keys(self):
-        return self._current_params().keys()
+        Example:
+        a = {k: v}
 
-    def items(self):
-        return self._current_params().items()
+        for k, v in a.items():
+            defaultdict.setdefault(k, v)
 
-    def values(self):
-        return self._current_params().values()
+        or
 
-    def default_params(self):
-        return super().get('default_params')
+        defaultdict.setdefault(**a)
+        """
+        if _k:
+            kwargs.update({_k: _v})
+        super().__getattribute__(f"_{self.__class__.__name__}__default").update(kwargs)
 
-    def _current_params(self):
-        return super().get('curr_params')
+    def __init__(self, *args, **default_params):
+        _annotation_copy = {}
 
-    def __getitem__(self, item):
-        return self._current_params()[item]
-
-    def __setitem__(self, key, value):
-        if key not in self.default_params():
-            raise KeyNotFound
-
-        return self._current_params().__setitem__(key, value)
-
-    def __delitem__(self, key):
-        return self._current_params().__delitem__(key)
-
-    def __getattr__(self, item):
-        return self[item]
-
-    def __setattr__(self, key, value):
-        return self.__setitem__(key, value)
-
-    def __delattr__(self, item, force=False):
         try:
-            return self.__delitem__(item)
-        except KeyNotFound as e:
-            if not force:
-                raise e
+            default_params.update(super().__getattribute__('__annotations__'))
+            _annotation_copy.update(super().__getattribute__('__annotations__'))
+            super().__getattribute__('__annotations__').clear()
+        except AttributeError:
+            pass
 
-    def __contains__(self, item):
-        return self._current_params().__contains__(item)
+        self._setattr("__default", {})
+        self.setdefault(**AttrDict(*args, **default_params))
+        super().__init__()
 
-    def __eq__(self, other):
-        return self._current_params().__eq__(other)
+        if _annotation_copy:
+            super().__getattribute__('__annotations__').update(_annotation_copy)
 
     def __iter__(self):
-        return self._current_params().__iter__()
+        return iter(self.keys())
 
-    def __bool__(self):
-        return self._current_params().__bool__()
+    def __setitem__(self, key, value):
+        if not self.get_default(key):
+            raise KeyError("Key not in default keys.")
+        return super().__setitem__(key, value)
 
-    def __call__(self, data):
-        assert isinstance(data, bytes)
-        self.clear()
-        self.from_buffer(data)
-        return self
-
-    def get(self, k):
-        return self.__getitem__(k)
-
-    def remove(self, key):
-        return self.__delitem__(key)
-
-    def clear(self, *args):
-        """
-        Set value of key to default if provided.
-        If not provide any key, clear all key of dict.
-        :return:
-        """
-        if not args:
-            self._current_params().update(self.default_params())
-            return
-
-        for k in args:
-            self.__setitem__(k, self.default_params().__getitem__(k))
-
-    def pop(self, k):
-        """
-        Like `clear` but require key.
-        :return:
-        """
-        value = self[k]
-        del self[k]
+    def __getitem__(self, key):
+        try:
+            value = super().__getitem__(key)
+        except KeyError as e:
+            if key not in super().__getattribute__(f"_{self.__class__.__name__}__default"):
+                raise e
+            value = self.get_default(key)
         return value
 
+    def __delitem__(self, key):
+        """
+        Clear and set back value to default.
+        """
+        try:
+            super().__delitem__(key)
+        except KeyError:
+            if self.get_default(key) is None:
+                raise KeyError(f"Can't found '{key}'!")
+
+    def __setattr__(self, key, value):
+        if not self.get_default(key):
+            raise KeyError("Key not in default keys.")
+        return super().__setattr__(key, value)
+
+    def __getattr__(self, key):
+        try:
+            value = super().__getattr__(key)
+        except AttributeError as e:
+            if key not in super().__getattribute__(f"_{self.__class__.__name__}__default"):
+                raise e
+            value = self.get_default(key)
+        return value
+
+    def __delattr__(self, key, **kwargs):
+        """
+        Clear and set back value to default.
+        """
+        try:
+            super()._delattr(key)
+        except KeyError:
+            if self.get_default(key) is None:
+                raise KeyError(f"Can't found '{key}'!")
+
+    def __call__(self, _data):
+        if type(_data) is bytes:
+            self.from_buffer(_data)
+        elif isinstance(_data, dict):
+            self.update(_data)
+        else:
+            raise TypeError(f"Type {type(_data)} isn't supported!")
+
+    def __len__(self) -> int:
+        return self.__getattribute__(f"_{self.__class__.__name__}__default").__len__()
+
+    def __eq__(self, other):
+        if not isinstance(other, dict):
+            raise TypeError(f"Can't compare with {other.__class__.__name__}")
+        return dict(self).__eq__(dict(other))
+
+    def get(self, key):
+        try:
+            value = self.__getitem__(key)
+        except KeyError:
+            return None
+        return value
+
+    def values(self) -> List[Any]:
+        """
+        Return all values of dict
+        """
+        for k in self.keys():
+            yield self.__getitem__(k)
+
+    def keys(self) -> List[str]:
+        """
+        Return all keys of dict
+        """
+        return self.__getattribute__(f"_{self.__class__.__name__}__default").keys()
+
+    def items(self) -> List[Tuple[str, Any]]:
+        """
+        Return all data of dict. (key, value)
+        """
+        for k, v in zip(self.keys(), self.values()):
+            yield k, v
+
+    def remove(self, key):
+        """
+        Clear key and value.
+        """
+        self.del_default(key)
+
+    def pop(self, key):
+        """
+        Clear key and return it's value.
+        """
+        value = self.del_default(key)
+        if key not in self:
+            return value
+        return super().pop(key)
+
     def popitem(self):
-        current_params = self._current_params().copy()
-        self.clear()
-        return current_params
-
-    def from_array(self, arr):
         """
-        Recover data from array.
-        Make sure arrange of keys correctly.
-        :param arr:
+        Pop the last item.
         :return:
         """
-        assert isinstance(arr, list)
-        if not self.__len__() == arr.__len__():
-            raise OutOfRange(f"Require only {self.__len__()} params. But got {arr.__len__()}")
+        k, v = super().__getattribute__(f"_{self.__class__.__name__}__default").popitem()
+        if k in self:
+            v = super().pop(k)
+        return k, v
 
-        for idx, key in enumerate(self):
-            self[key] = arr[idx]
-
-    def to_array(self):
-        """
-        Like `values` but return `list` instead.
-        :return:
-        """
-        return list(self.values())
-
-    def __bytes__(self):
-        """
-        This compress all values of dict. Ref: "to_array"
-        :return:
-        """
-        return compress_list(self.to_array(), compress_type=COMPRESS_FASTEST)
-
-    def from_buffer(self, buffer):
-        """
-        Decompress all values of dict. Ref: "from_array"
-
-        ***Make sure arrange of keys correctly.
-        :return:
-        """
-        assert isinstance(buffer, bytes)
-        self.from_array(decompress_list(buffer))
-        return self
-
-    def to_buffer(self, compress_type=COMPRESS_FASTEST):
-        return compress_list(self.to_array(), compress_type=compress_type)
-
-    def setdefault(self, k, v=None, **kwargs):
-        """
-        Change default value of key.
-        :return:
-        """
-        kwargs.update({k: v})
-        self.default_params().update(kwargs)
-        self._current_params().update(kwargs)
-
-    def update(self, _params=None, **kwargs):
-        """
-        Fast way to set item via dict and kwargs
-        :return:
-        """
-        if _params is None:
-            _params = {}
-
-        assert isinstance(_params, dict)
-        _params.update(kwargs)
-        for k in _params:
-            if k in self.default_params():
-                self[k] = _params[k]
-
-    @staticmethod
-    def fromkeys(*args, **kwargs):
-        _dict = super().fromkeys(*args, **kwargs)
-        return DefaultDict.__init__(**_dict)
+    def copy(self):
+        _copy = DefaultDict(super().__getattribute__(f"_{self.__class__.__name__}__default"))
+        _copy.update(self)
+        return _copy
 
 
-class DefaultTypeDict(DefaultDict):
-    """
-    FixedTypeDict help cover your dict when set item. Implement from FixedDict.
-
-    Example:
-        your_dict = FixedTypeDict(a=int, b=float)
-        your_dict.a = 1     # It's working
-        your_dict.a = 1.0   # Error TypeOfValueError
-    """
-    def __init__(self, _args=None, _kwargs=None, **default_params):
-        if _kwargs is None:
-            _kwargs = {}
-        if _args is None:
-            _args = []
-
-        assert type(_args) is list
-        assert isinstance(_kwargs, dict)
-
-        super().__init__()
-        for k, v in default_params.items():
-            if type(v) is not type:
-                raise ValueError(f"Value must be class. {k}: {v}")
-            self.setdefault(k, v)
-
-        self.setdefault('_args', _args)
-        self.setdefault('_kwargs', _kwargs)
-
-    def __setitem__(self, key, value=None):
-        if value is None:
-            value = self.type(key)(*self.default_params()['_args'], **self.default_params()['_kwargs'])
-
-        if type(value) != self.default_params()[key]:
-            raise TypeOfValueError
-
-        super().__setitem__(key, value)
-
-    def setdefault(self, k, v=None, **kwargs):
-        """
-        Change default value of key.
-        :return:
-        """
-        kwargs.update({k: v})
-        self.default_params().update(kwargs)
-
-    def add(self, key, value=None):
-        self.__setitem__(key, value)
-
-    def type(self, key):
-        return self.default_params()[key]
-
-
-class UniqueTypeDict(DefaultDict):
+class TypedDict(AttrDict):
     """
     Dict only access one type for all element.
     Raise TypeOfValueError if type of set value not same as type defined before.
@@ -277,7 +216,16 @@ class UniqueTypeDict(DefaultDict):
         your_dict = UniqueTypeDict(int)
         your_dict.a = 1     # it's working
         your_dict.a = 2.0   # raise error TypeOfValueError
+
+    Support annotations alias:
+        class CustomDict(TypedDict):
+            a: 1
+            b: 2
+
+        custom_dict = CustomDict()
+        custom_dict.a   # return: 1
     """
+
     def __init__(self, _type, _args=None, _kwargs=None):
         super().__init__()
         if _kwargs is None:
@@ -291,25 +239,31 @@ class UniqueTypeDict(DefaultDict):
         if not isclass(_type):
             raise TypeError(f"Only support type class. But got {_type}")
 
-        super().default_params().__setitem__('_type', _type)
-        super().default_params().__setitem__('_args', _args)
-        super().default_params().__setitem__('_kwargs', _kwargs)
+        self._setattr('__type', _type)
+        self._setattr('__args', _args)
+        self._setattr('__kwargs', _kwargs)
 
-    def add(self, key, value=None):
+    def add(self, key, value=None, force=False):
+        if key in self and not force:
+            raise KeyError(f'Key "{key}" was existed!')
         self.__setitem__(key, value)
 
     def __setitem__(self, key, value=None):
         if value is None:
-            value = self.type(*self.default_params()['_args'], **self.default_params()['_kwargs'])
+            value = self.type(*self.__getattribute__(f"_{self.__class__.__name__}__args"),
+                              **self.__getattribute__(f"_{self.__class__.__name__}__kwargs"))
 
-        if type(value) != self.type:
-            raise TypeOfValueError
-
-        self._current_params().__setitem__(key, value)
+        if not isinstance(value, self.type):
+            try:
+                value = self.type(value)
+            except ValueError as e:
+                e.args = f"Default is {self.type}. Got {type(value)}",
+                raise e
+        super().__setitem__(key, value)
 
     @property
     def type(self):
-        return super().default_params()['_type']
+        return self.__getattribute__(f"_{self.__class__.__name__}__type")
 
     def setdefault(*args, **kwargs):
         raise AttributeError
@@ -321,5 +275,98 @@ class UniqueTypeDict(DefaultDict):
     def fromkeys(*args, **kwargs):
         raise AttributeError
 
+    def set_type(self, _type):
+        if not isclass(_type):
+            raise TypeError(f"Only support type class. But got {_type}")
 
-__all__ = ['DefaultDict', 'DefaultTypeDict', 'UniqueTypeDict', 'EmptyKey', 'OutOfRange', 'TypeOfValueError']
+        _values = list(self.values())
+        for idx, _value in enumerate(_values):
+            _values[idx] = _type(_value)
+
+        super().setdefault('__type', _type)
+        for k, v in zip(self.keys(), _values):
+            self[k] = v
+
+
+class DefaultTypeDict(DefaultDict):
+    """
+    DefaultTypeDict help cover your dict when set item same as type of default value.
+    Implement from DefaultDict.
+
+    Example:
+        your_dict = DefaultTypeDict(a=int, b=float)
+        your_dict.a = 1     # It's working
+        your_dict.a = "default"   # Error TypeOfValueError
+
+    Custom class:
+        class abc(DefaultTypeDict):
+            a: 1
+            b: float
+
+        your_dict = abc()
+        your_dict.a = 1     # It's working
+        your_dict.a = "default"   # Error TypeOfValueError
+
+    Support annotations alias:
+        class CustomDict(DefaultTypeDict):
+            a: 1
+            b: 2
+
+        custom_dict = CustomDict()
+        custom_dict.a   # return: 1
+    """
+    def setdefault(self, _k=None, _v=None, **kwargs):
+        if _k:
+            kwargs.update({_k: _v})
+        for k, v in kwargs.items():
+            super().setdefault(k, v)
+            _type = v if isclass(v) else v.__class__
+            if k in self and not isinstance(self[k], _type):
+                self[k] = _type(self[k])
+
+    def __setitem__(self, key, value):
+        if key not in super().__getattribute__(f"_{self.__class__.__name__}__default"):
+            raise KeyError(f"Not found '{key}'")
+        _type = self.get_default(key)
+
+        if not isclass(_type):
+            _type = _type.__class__
+
+        if not isinstance(value, _type):
+            try:
+                value = _type(value)
+            except ValueError as e:
+                e.args = f"Default is {_type}. Got {type(value)}",
+                raise e
+        return super().__setitem__(key, value)
+
+    def __getitem__(self, key):
+        value = super().__getitem__(key)
+        if isclass(value):
+            return value()
+        return value
+
+    def __setattr__(self, key, value):
+        if key not in super().__getattribute__(f"_{self.__class__.__name__}__default"):
+            raise KeyError(f"Not found '{key}'")
+
+        _type = self.get_default(key)
+        if not isclass(_type):
+            _type = _type.__class__
+
+        if not isinstance(value, _type):
+            try:
+                value = _type(value)
+            except ValueError as e:
+                e.args = f"Default is {_type}. Got {type(value)}",
+                raise e
+        return super().__setattr__(key, value)
+
+    def __getattr__(self, key):
+        value = super().__getattr__(key)
+        if isclass(value):
+            return value()
+        return value
+
+
+__all__ = ['DefaultDict', 'DefaultTypeDict', 'TypedDict']
