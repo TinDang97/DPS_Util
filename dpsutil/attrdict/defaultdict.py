@@ -11,11 +11,13 @@ class DefaultDict(AttrDict):
 
     Example:
         your_dict = DefaultDict(a=1, b=2)
-        # {}
-        # Default: {'a': 1, 'b': 2}
-        # Definitely, your dict empty but that will be filled by default_value
-
         your_dict.a    # return: 1
+
+        # Set key-value if it wasn't defined before
+        your_dict.c = 4   # raise KeyError
+
+        # To avoid KeyError
+        your_dict.set_default('c', 4)
 
         # Next, you set key a=5
         your_dict.a = 5
@@ -29,11 +31,23 @@ class DefaultDict(AttrDict):
         your_dict.a    # return: 1
 
         # Delete key.
-        your
+        your.clear('a')
         /// or 
         del your_dict['a']
 
+        # Remove key:
+        your_dict.del_default('a')
+        or
+        your_dict.remove('a')
+
     Supported annotations alias
+        class CustomDict(DefaultDict):
+            a: 1
+            b: 2
+
+        custom_dict = CustomDict()
+        custom_dict.a   # return: 1
+        custom_dict.c   # raise KeyError
 
     User case:
     - When you need to control your params or hyper config.

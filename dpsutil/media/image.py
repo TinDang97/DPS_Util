@@ -7,6 +7,7 @@ from turbojpeg import TurboJPEG, TJPF_RGB, TJPF_BGR
 
 from .tool import hex2rgb, color_rgb2bgr, image_info, JPEG_FORMAT, JPEG2000_FORMAT
 from .constant import PX_BGR, PX_RGB, DEFAULT_QUALITY, INTER_DEFAULT, ENCODE_PNG, ENCODE_JPEG
+from .constant import FLIP_HORIZONTAL, FLIP_VERTICAL, FLIP_BOTH
 
 """
 This tool implement from OpenCV. Can you find more options at https://github.com/opencv/opencv
@@ -101,7 +102,7 @@ def imwrite(img, img_path, encode_type=ENCODE_JPEG, quality=95, color_format=PX_
         img_path.write(imencode(img, encode_type=encode_type, quality=quality, color_format=color_format))
 
 
-def crop_image(img, box=(0, 0, 0, 0), margin_size=0) -> numpy.ndarray:
+def crop(img, box=(0, 0, 0, 0)) -> numpy.ndarray:
     """
     Crop media with margin.
 
@@ -109,23 +110,49 @@ def crop_image(img, box=(0, 0, 0, 0), margin_size=0) -> numpy.ndarray:
 
     :return: cropped media
     """
-    if not img.any():
-        raise Exception("Image is not existed!")
+    if not numpy.any(box):
+        return img
 
     (max_height, max_width, _) = img.shape
     (x, y, w, h) = box
 
-    x_end = x + w + margin_size
-    y_end = y + h + margin_size
+    x = int(round(max(x, 0)))
+    y = int(round(max(y, 0)))
+    w = int(round(min(w, max_width)))
+    h = int(round(min(h, max_width)))
+    return img[y:h, x:w]
+
+
+def crop_margin(img: numpy.ndarray, margin_size: float, box=(0, 0, 0, 0)) -> numpy.ndarray:
+    x, y, w, h = box
+    w = w + margin_size
+    h = h + margin_size
     x = x - margin_size
     y = y - margin_size
+    return crop(img, (x, y, w, h))
 
-    x = round(max(x, 0))
-    y = round(max(y, 0))
-    x_end = round(min(x_end, max_width))
-    x_end = round(min(x_end, max_width))
 
-    return img[y:y_end, x:x_end]
+# Todo: https://stackoverflow.com/questions/60029431/how-to-pad-an-array-of-images-with-a-given-color-without-a-for-loop
+# torchvision.functional.pad
+# def pad(img, pad_value, method="constant"):
+#     pass
+
+
+def crop_center(img, crop_size) -> numpy.ndarray:
+    """
+    Crop center of image with crop_size
+
+    :raise ValueError. if crop_size > image's size
+    """
+    height, width = img.shape[:2]
+    width_crop, height_crop = crop_size
+
+    if width_crop >= width or height_crop >= height:
+        raise ValueError(f"crop_size must be smaller than image's size! {width_crop, height_crop} >= {width, height}")
+
+    x = int(round((width - width_crop) / 2.))
+    y = int(round((height - height_crop) / 2.))
+    return crop(img, (x, y, width_crop, height_crop))
 
 
 def resize(img, size, keep_ratio=False, inter_method=INTER_DEFAULT):
@@ -152,17 +179,30 @@ def resize(img, size, keep_ratio=False, inter_method=INTER_DEFAULT):
     return cv2.resize(img, (new_width, new_height), interpolation=inter_method)
 
 
-def zoom(img, ratio, center=None) -> numpy.ndarray:
-    """
-    Zoom part of image at position.
-    position is center of image at default.
+def flip(img, flip_mode):
+    if flip_mode == FLIP_VERTICAL:
+        axis = 0
+    elif flip_mode == FLIP_HORIZONTAL:
+        axis = 1
+    elif flip_mode == FLIP_BOTH:
+        axis = (0, 1)
+    else:
+        raise ValueError(f"Mode '{flip_mode}' isn't supported. Only: FLIP_VERTICAL, FLIP_HORIZONTAL or FLIP_BOTH")
+    return numpy.flip(img, axis=axis)
 
-    This's faster way than crop and resize.
+
+def zoom(img: numpy.ndarray, zoom_level: float, center=None) -> numpy.ndarray:
+    """
+    Zoom image at position.
+
+    Params:
+        zoom_level: integer. Level of zoom. Example: 1x == 1, 1.5x==1.5, 2x == 2...
+        center: center of image's zoomed. Default: center old image.
     """
     assert isinstance(img, numpy.ndarray)
     assert type(center) in [type(None), tuple]
 
-    if ratio == 1:
+    if zoom_level == 1:
         return img
 
     (h, w) = img.shape[:2]
@@ -173,8 +213,19 @@ def zoom(img, ratio, center=None) -> numpy.ndarray:
     else:
         center = (w // 2, h // 2)
 
-    rotate_matix = cv2.getRotationMatrix2D(center, 0, float(ratio))
+    rotate_matix = cv2.getRotationMatrix2D(center, 0, float(zoom_level))
     return cv2.warpAffine(img, rotate_matix, (w, h))
+
+
+def scale(img, box=(0, 0, 0, 0), output_size=None):
+    if not numpy.any(box):
+        box = (0, 0, *img.shape[:2][::-1])
+
+    img = crop(img, box)
+
+    if output_size:
+        return resize(img, output_size)
+    return img
 
 
 def rotate_bound(img, angle) -> numpy.ndarray:
@@ -221,10 +272,7 @@ def draw_text(img, label, position, color=(0, 0, 255), scale_factor=1, thickness
     - color: support tuple and hex_color
     :return:
     """
-    if isinstance(position, numpy.ndarray):
-        position = position.tolist()
-
-    if isinstance(position, list):
+    if not isinstance(position, tuple):
         position = tuple(position)
 
     if isinstance(color, str):
@@ -242,10 +290,7 @@ def draw_square(img, position, color=(0, 255, 0)) -> numpy.ndarray:
     - color: support tuple and hex_color
     :return:
     """
-    if isinstance(position, numpy.ndarray):
-        position = position.tolist()
-
-    if isinstance(position, list):
+    if not isinstance(position, tuple):
         position = tuple(position)
 
     if isinstance(color, str):
@@ -290,6 +335,6 @@ def automatic_brightness_and_contrast(image, clip_hist_percent=1):
     return auto_result
 
 
-__all__ = ['imencode', 'imdecode', 'imread', 'imwrite', 'crop_image', 'resize', 'zoom', 'rotate_bound', 'rotate_crop',
+__all__ = ['imencode', 'imdecode', 'imread', 'imwrite', 'crop', 'resize', 'zoom', 'rotate_bound', 'rotate_crop',
            'draw_text', 'draw_square', 'automatic_brightness_and_contrast', 'ENCODE_PNG', 'ENCODE_JPEG', 'PX_BGR',
-           'PX_RGB']
+           'PX_RGB', 'scale', 'flip', 'crop_margin', 'crop_center']

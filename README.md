@@ -94,20 +94,19 @@ Ver 1.1.27:
 - Support recreate dict with from_buffer.
 - Lightweight than pickle.dumps
 
+Ver 1.2.0:
+- CV:
+  - Added Face Aligner
+  - Transforms image methods
+- media.image:
+  - Added scale, crop_center, flip
+  - Fix bugs
+- media.video: support FPS report.
+- triangle (new)
+
+
 ### Todo:
-- Attr support hint typing:
-
-Example:
-```
-class Location(object):
-    lat_long: tuple
-    grid_square: str
-    xy_coordinate: tuple
-
-Location.__annotations__
-{'lat_long': tuple, 'grid_square': str, 'xy_coordinate': tuple}
-```
-
+- Attr support constant typing
 - Sort -> implement natsort - https://github.com/SethMMorton/natsort
 - CV -> Find more util
 - Find & Add more functions

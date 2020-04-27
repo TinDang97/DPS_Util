@@ -3,6 +3,7 @@
 Created on Mon Apr 24 15:43:29 2017
 @author: zhaoy
 """
+import numpy
 import numpy as np
 import cv2
 from ..matlab.cp2tform import get_similarity_transform_for_cv2
@@ -26,7 +27,19 @@ AFFINE = 'affine'
 class FaceWarpException(Exception):
     def __str__(self):
         return 'In File {}:{}'.format(
-            __file__, super.__str__(self))
+            __file__, super().__str__())
+
+
+class FaceAligner(object):
+    def __init__(self, output_resolution=112):
+        self.output_size = (output_resolution, output_resolution)
+        self.reference = get_reference_facial_points(default_square=True) * (output_resolution / 112)
+
+    def align(self, image, facial5point):
+        assert isinstance(image, numpy.ndarray)
+        return warp_and_crop_face(image, facial5point, self.reference, crop_size=self.output_size)
+
+    __call__ = align
 
 
 def get_reference_facial_points(output_size=None,
@@ -319,3 +332,4 @@ def warp_and_crop_face(src_img,
         tfm = get_similarity_transform_for_cv2(src_pts, ref_pts)
 
     return cv2.warpAffine(src_img, tfm, crop_size)
+

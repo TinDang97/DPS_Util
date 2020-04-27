@@ -1,5 +1,11 @@
 import ssl
+
 from kafka import KafkaProducer, KafkaConsumer
+
+# TODO | Kafka Confluent. https://github.com/confluentinc/confluent-kafka-python
+
+# Implement it with Optimize Kafka Config Tutorial |
+# https://assets.confluent.io/m/6b6d4f8910691700/original/20190626-WP-Optimizing_Your_Apache_Kafka_Deployment.pdf?_ga=2.212964180.1913133577.1587956580-480563997.1585304727
 
 
 def initial_ssl(username):

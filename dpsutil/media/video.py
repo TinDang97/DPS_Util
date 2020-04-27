@@ -7,13 +7,13 @@ from threading import Thread, Lock, Condition
 import ffmpeg
 import numpy
 
-from .image import ENCODE_JPEG, ENCODE_PNG, DEFAULT_QUALITY, imwrite
+from .constant import PX_RGB, PX_BGR, DEFAULT_QUALITY
+from .image import ENCODE_JPEG, ENCODE_PNG, imwrite
 from .image import imencode, imdecode
 from .tool import show_image
-from .constant import PX_RGB, PX_BGR
 
 FPS_DEFAULT = 0
-SIZE_DEFAULT = (0, 0)
+SIZE_DEFAULT = (-1, -1)
 
 PIXEL_RGB_FORMAT = "rgb24"
 PIXEL_BGR_FORMAT = "bgr24"
@@ -43,9 +43,7 @@ class Frame(object):
     def encode(self, encode_type=ENCODE_JPEG, quality=DEFAULT_QUALITY):
         return imencode(self.decode(), encode_type=encode_type, quality=quality, color_format=self.pix_fmt)
 
-    def save(self, img_path, encode_type=ENCODE_JPEG, quality=DEFAULT_QUALITY,
-             over_write=False):
-
+    def save(self, img_path, encode_type=ENCODE_JPEG, quality=DEFAULT_QUALITY, over_write=False):
         if os.path.isfile(img_path) and not over_write:
             raise FileExistsError
 
@@ -87,22 +85,33 @@ class VideoIterator(object):
         self.pool_frames = self.Box() if get_latest else Queue(maxsize=cache_frames)
         self.thread = Thread(target=self.read_buffer)
         self.read_byte_size = self.size[0] * self.size[1] * 3
+        self.counter = 0
+        self.start_time = 0
 
     def __iter__(self):
-        self.thread.start()
+        if not self.thread.is_alive():
+            self.start()
         return self
 
     def __next__(self):
+        self.counter += 1
         return self.get_frame()
 
     def __enter__(self):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self.close()
+        return self.close()
+
+    def start(self):
+        if not self.thread.is_alive():
+            self.thread.start()
+        self.start_time = time.time()
+        self.counter = 0
 
     def close(self):
         self.stream.terminate()
+        return self.counter/(time.time() - self.start_time)
 
     def get_frame(self, time_out=30):
         buffer = self.pool_frames.get(timeout=time_out)
@@ -129,7 +138,7 @@ class VideoCapture(object):
                      VideoCapture("file_path")
         - fps: same source's fps, If not set.
         - output_size: same source's size, If not set.
-        - keep_ratio: keep ratio of source's size, If output_size has been set.
+        - keep_ratio: keep ratio of output_size from source's size, If output_size has been set.
         - pixel_format: support PX_RGB, PX_BGR
 
         Example:
@@ -249,7 +258,7 @@ class VideoCapture(object):
                 if not show_image(frame.decode(), f"Preview - {self.__src}"):
                     break
 
-        capture_input.stop()
+        capture_input.close()
         capture_output.stdin.close()
         capture_output.wait(timeout=timeout)
 
