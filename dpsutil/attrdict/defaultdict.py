@@ -100,7 +100,7 @@ class DefaultDict(AttrDict):
         return iter(self.keys())
 
     def __setitem__(self, key, value):
-        if not self.get_default(key):
+        if key not in super().__getattribute__(f"_{self.__class__.__name__}__default"):
             raise KeyError("Key not in default keys.")
         return super().__setitem__(key, value)
 
@@ -124,7 +124,7 @@ class DefaultDict(AttrDict):
                 raise KeyError(f"Can't found '{key}'!")
 
     def __setattr__(self, key, value):
-        if not self.get_default(key):
+        if key not in super().__getattribute__(f"_{self.__class__.__name__}__default"):
             raise KeyError("Key not in default keys.")
         return super().__setattr__(key, value)
 
@@ -154,6 +154,7 @@ class DefaultDict(AttrDict):
             self.update(_data)
         else:
             raise TypeError(f"Type {type(_data)} isn't supported!")
+        return self
 
     def __len__(self) -> int:
         return self.__getattribute__(f"_{self.__class__.__name__}__default").__len__()

@@ -37,7 +37,8 @@ class FaceAligner(object):
 
     def align(self, image, facial5point):
         assert isinstance(image, numpy.ndarray)
-        return warp_and_crop_face(image, facial5point, self.reference, crop_size=self.output_size)
+        face_aligned, lm_aligned = warp_and_crop_face(image, facial5point, self.reference, crop_size=self.output_size)
+        return face_aligned, lm_aligned
 
     __call__ = align
 
@@ -331,5 +332,7 @@ def warp_and_crop_face(src_img,
     else:
         tfm = get_similarity_transform_for_cv2(src_pts, ref_pts)
 
-    return cv2.warpAffine(src_img, tfm, crop_size)
+    face_aligned = cv2.warpAffine(src_img, tfm, crop_size)
+    lm_aligned = numpy.asarray([tfm @ numpy.array([*facial, 1]) for facial in facial_pts])
+    return face_aligned, lm_aligned
 

@@ -87,6 +87,7 @@ class VideoIterator(object):
         self.read_byte_size = self.size[0] * self.size[1] * 3
         self.counter = 0
         self.start_time = 0
+        self.end_time = 0
 
     def __iter__(self):
         if not self.thread.is_alive():
@@ -101,17 +102,24 @@ class VideoIterator(object):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        return self.close()
+        self.close()
+
+    def fps(self):
+        end_time = self.end_time
+        if self.thread.is_alive():
+            end_time = time.time()
+        return int(round(self.counter // (end_time - self.end_time)))
 
     def start(self):
         if not self.thread.is_alive():
             self.thread.start()
+
         self.start_time = time.time()
         self.counter = 0
 
     def close(self):
         self.stream.terminate()
-        return self.counter/(time.time() - self.start_time)
+        self.end_time = time.time()
 
     def get_frame(self, time_out=30):
         buffer = self.pool_frames.get(timeout=time_out)

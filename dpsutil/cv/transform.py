@@ -17,7 +17,6 @@ class Transform(object):
         self.methods = methods
 
     def perform(self, img):
-        assert isinstance(img, numpy.ndarray)
         for method in self.methods:
             img = method(img)
         return img
@@ -68,4 +67,9 @@ def crop_margin(margin_size, box, *args, **kwargs):
 
 @TransformMethod
 def flip(flip_mode, *args, **kwargs):
-    return image_tool.crop_margin, args, kwargs
+    return image_tool.flip, [flip_mode, *args], kwargs
+
+
+@TransformMethod
+def normalize(mean, std, *args, **kwargs):
+    return image_tool.normalize, [mean, std, *args], kwargs
