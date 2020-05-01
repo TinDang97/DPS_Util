@@ -245,10 +245,14 @@ class TypedDict(AttrDict):
         super().__init__()
         if _kwargs is None:
             _kwargs = {}
-        if _args is None:
-            _args = []
 
-        assert type(_args) is list
+        if _args is None:
+            _args = ()
+
+        if type(_args) is list:
+            _args = tuple(_args)
+
+        assert type(_args) is tuple
         assert isinstance(_kwargs, dict)
 
         if not isclass(_type):

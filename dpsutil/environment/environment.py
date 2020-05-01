@@ -1,4 +1,4 @@
-from ..attrdict import DefaultDict
+from ..attrdict import DefaultDict, AttrDict
 from os import environ
 
 
@@ -105,8 +105,8 @@ class Environment(DefaultDict):
         key = self._cvt_key(key)
         return super().__delattr__(key)
 
-    def to_lower(self):
-        curr = self.copy()
+    def get_lower_dict(self):
+        curr = AttrDict(self)
         for k in list(curr.keys()):
             value = curr.pop(k)
             curr[k.lower()] = value
