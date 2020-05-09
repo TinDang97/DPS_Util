@@ -28,26 +28,33 @@ class AttrDict(attrdict.AttrDict):
         your_dict.b     # return: 1
         your_dict.c     # raise KeyError
 
-    Support annotations alias:
-        class CustomDict(AttrDict):
-            a: 1
-            b: 2
+    ==================
+    Supported decorator.
+        @attrdict.attribute_dict
+
+    Decorator that it create dict by attribute of class.
+    Support attribute alias:
+        @attrdict.attribute_dict
+        class CustomDict:
+            a=1
+            b=2
 
         custom_dict = CustomDict()
         custom_dict.a   # return: 1
+        custom_dict.b   # return: 2
     """
+
     def __init__(self, __dict=None, __value=None, **default_params):
+        # create instance
         super().__init__()
+        self._setattr('_sequence_type', list)
+
+        # update data from constructor
         if __dict is None:
             __dict = {}
 
         if isinstance(__dict, dict):
             __dict = __dict.items()
-
-        try:
-            default_params.update(super().__getattribute__("__annotations__"))
-        except AttributeError:
-            pass
 
         for _dict in [__dict, default_params.items()]:
             for pair in _dict:

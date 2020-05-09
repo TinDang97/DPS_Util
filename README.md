@@ -104,6 +104,9 @@ Ver 1.2.0:
 - media.video: support FPS report.
 - triangle (new)
 
+Ver 1.2.1:
+- Support decorator attrdict
+- Support decorator environment
 
 ### Todo:
 - Attr support constant typing

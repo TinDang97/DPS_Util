@@ -1,4 +1,5 @@
-from ..attrdict import DefaultDict, AttrDict
+from dpsutil.attrdict import DefaultDict, AttrDict
+from dpsutil.attrdict.decorator import _get_vars_cls
 from os import environ
 
 
@@ -36,17 +37,22 @@ class Environment(DefaultDict):
 
     configs = Environment(KAFKA_HOST='localhost', KAFKA_PORT='9092', KAFKA_USER_NAME=None, KAFKA_PASSWORD=None,
                           REDIS_HOST='localhost', REDIS_PORT='6379', REDIS_PASSWORD=None, REDIS_EXPIRE_TIME=60)
+    ==================
+    Supported decorator.
+        @environment.decorator
 
-    # Support annotations alias -> 192 characters:
-        class CustomEnv(Environment):
-            KAFKA_HOST: 'localhost'
-            KAFKA_PORT: '9092'
-            KAFKA_USER_NAME: None
-            KAFKA_PASSWORD: None
-            REDIS_HOST: 'localhost'
-            REDIS_PORT: '6379'
-            REDIS_PASSWORD: None
-            REDIS_EXPIRE_TIME: 60
+    Decorator create EnvDict base on attribute of class.
+
+    @environment.env_decorator
+    class CustomEnv:
+        KAFKA_HOST = 'localhost'
+        KAFKA_PORT = '9092'
+        KAFKA_USER_NAME = None
+        KAFKA_PASSWORD = None
+        REDIS_HOST = 'localhost'
+        REDIS_PORT = '6379'
+        REDIS_PASSWORD = None
+        REDIS_EXPIRE_TIME = 60
     """
 
     def __init__(self, *args, **default_params):
@@ -89,8 +95,7 @@ class Environment(DefaultDict):
         return super().__setitem__(key, value)
 
     def __delitem__(self, key):
-        key = self._cvt_key(key)
-        return super().__delitem__(key)
+        raise AttributeError("Clear value doesn't supported. To get default value by get_default function.")
 
     def __getattr__(self, key):
         key = self._cvt_key(key)
@@ -113,4 +118,24 @@ class Environment(DefaultDict):
         return curr
 
 
-__all__ = ['Environment']
+def env_decorator(_cls):
+    """
+    Decorator create EnvDict base on attribute of class.
+
+    @environment.env_decorator
+    class CustomEnv:
+        KAFKA_HOST = 'localhost'
+        KAFKA_PORT = '9092'
+        KAFKA_USER_NAME = None
+        KAFKA_PASSWORD = None
+        REDIS_HOST = 'localhost'
+        REDIS_PORT = '6379'
+        REDIS_PASSWORD = None
+        REDIS_EXPIRE_TIME = 60
+    """
+    def instance():
+        return Environment(_get_vars_cls(_cls))
+    return instance
+
+
+__all__ = ['Environment', 'env_decorator']

@@ -40,14 +40,20 @@ class DefaultDict(AttrDict):
         or
         your_dict.remove('a')
 
-    Supported annotations alias
-        class CustomDict(DefaultDict):
-            a: 1
-            b: 2
+    ==================
+    Supported decorator.
+        @attrdict.default_dict
+
+    Decorator that it create DefaultDict by attribute of class.
+    Support attribute alias:
+        @attrdict.default_dict
+        class CustomDict:
+            a=1
+            b=2
 
         custom_dict = CustomDict()
         custom_dict.a   # return: 1
-        custom_dict.c   # raise KeyError
+        custom_dict.b   # return: 2
 
     User case:
     - When you need to control your params or hyper config.
@@ -80,21 +86,9 @@ class DefaultDict(AttrDict):
         super().__getattribute__(f"_{self.__class__.__name__}__default").update(kwargs)
 
     def __init__(self, *args, **default_params):
-        _annotation_copy = {}
-
-        try:
-            default_params.update(super().__getattribute__('__annotations__'))
-            _annotation_copy.update(super().__getattribute__('__annotations__'))
-            super().__getattribute__('__annotations__').clear()
-        except AttributeError:
-            pass
-
         self._setattr("__default", {})
         self.setdefault(**AttrDict(*args, **default_params))
         super().__init__()
-
-        if _annotation_copy:
-            super().__getattribute__('__annotations__').update(_annotation_copy)
 
     def __iter__(self):
         return iter(self.keys())
@@ -142,10 +136,10 @@ class DefaultDict(AttrDict):
         Clear and set back value to default.
         """
         try:
-            super()._delattr(key)
-        except KeyError:
-            if self.get_default(key) is None:
-                raise KeyError(f"Can't found '{key}'!")
+            super().__delattr__(key)
+        except KeyError as e:
+            if key not in super().__getattribute__(f"_{self.__class__.__name__}__default"):
+                raise e
 
     def __call__(self, _data):
         if type(_data) is bytes:
@@ -232,13 +226,7 @@ class TypedDict(AttrDict):
         your_dict.a = 1     # it's working
         your_dict.a = 2.0   # raise error TypeOfValueError
 
-    Support annotations alias:
-        class CustomDict(TypedDict):
-            a: 1
-            b: 2
-
-        custom_dict = CustomDict()
-        custom_dict.a   # return: 1
+    # Un-support decorator
     """
 
     def __init__(self, _type, _args=None, _kwargs=None):
@@ -326,13 +314,24 @@ class DefaultTypeDict(DefaultDict):
         your_dict.a = 1     # It's working
         your_dict.a = "default"   # Error TypeOfValueError
 
-    Support annotations alias:
-        class CustomDict(DefaultTypeDict):
-            a: 1
-            b: 2
+    ==================
+    Supported decorator.
+        @attrdict.default_type_dict
 
+    Decorator that it create DefaultTypeDict base on attribute of class.
+    Raise 'TypeError': On the same key, if type of value isn't same as type in annotations.
+
+    Support attribute alias:
+        @attrdict.default_type_dict
+        class CustomDict:
+            a: float = 1        # value will be cast to type that it was defined in annotation.
+            b = 2               # if type not in annotation, type of value will be used.
+            c: int = 'abcd'     # raise TypeError
+
+        # assume key 'c' wasn't set.
         custom_dict = CustomDict()
-        custom_dict.a   # return: 1
+        custom_dict.a   # return: 1.0
+        custom_dict.b   # return: 2
     """
     def setdefault(self, _k=None, _v=None, **kwargs):
         if _k:
