@@ -3,6 +3,10 @@ from confluent_kafka import Producer as _ProducerImpl
 from .configs import ProducerConfigs, _STOP_CODE
 from .error import ValueSerializationError, KeySerializationError, TimeOutError
 
+__all__ = [
+    'Producer'
+]
+
 
 class Producer(_ProducerImpl):
     """

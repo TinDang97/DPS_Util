@@ -5,6 +5,10 @@ from confluent_kafka.error import KafkaException
 from .error import ConsumeError, TimeOutError, KeyDeserializationError, ValueDeserializationError
 from .configs import ConsumerConfigs, _STOP_CODE, _MAX_MSG
 
+__all__ = [
+    'Consumer'
+]
+
 
 class MessageFetcher(object):
     """

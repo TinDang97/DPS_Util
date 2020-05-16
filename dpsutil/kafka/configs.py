@@ -4,8 +4,18 @@ from dpsutil.attrdict import DefaultDict, AttrDict
 # https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md
 # https://assets.confluent.io/m/6b6d4f8910691700/original/20190626-WP-Optimizing_Your_Apache_Kafka_Deployment.pdf?_ga=2.212964180.1913133577.1587956580-480563997.1585304727
 
+
+__all__ = [
+    "_STOP_CODE",
+    "_MAX_MSG",
+    "sasl_conf",
+    "ConsumerConfigs",
+    "ProducerConfigs"
+]
+
 _STOP_CODE = b"__CONSUMER_STOP"
 _MAX_MSG = 1 << 24
+
 
 def sasl_conf(sasl_mechanism="GSSAPI", username=None, password=None, broker_principal="kafka"):
     """
