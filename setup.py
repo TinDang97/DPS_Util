@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setup(name='dpsutil',
-      version='1.2.0',
+      version='1.3.0',
       description='This repository contain all util',
       long_description=long_description,
       long_description_content_type="text/markdown",
@@ -16,7 +16,7 @@ setup(name='dpsutil',
       install_requires=[
             'numpy',
             'redis',
-            'kafka-python',
+            'confluent_kafka>=1.4.1',
             'lz4',
             'blosc==1.9.1',
             'ffmpeg-python==0.2.0',

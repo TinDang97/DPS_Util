@@ -104,15 +104,19 @@ Ver 1.2.0:
 - media.video: support FPS report.
 - triangle (new)
 
-Ver 1.2.1:
+Ver 1.3.0:
 - Support decorator attrdict
 - Support decorator environment
+- Implemented Confluent-Kafka with:
+    - Iterator method
+    - Close event.
+    - Auto_commit
+    - Optimize configs for ThroughOut
+    - Fix bug KafkaError
 
 ### Todo:
-- Attr support constant typing
+- Implement Configs librdkafka
 - Sort -> implement natsort - https://github.com/SethMMorton/natsort
-- CV -> Find more util
-- Find & Add more functions
  ---
 ### Features
 
