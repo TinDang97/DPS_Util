@@ -53,6 +53,9 @@ class AttrDict(attrdict.AttrDict):
         if __dict is None:
             __dict = {}
 
+        if isinstance(__dict, str):
+            __dict = [__dict]
+
         if isinstance(__dict, dict):
             __dict = __dict.items()
 

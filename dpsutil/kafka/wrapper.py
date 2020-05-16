@@ -9,23 +9,9 @@ import kafka
 # https://assets.confluent.io/m/6b6d4f8910691700/original/20190626-WP-Optimizing_Your_Apache_Kafka_Deployment.pdf?_ga=2.212964180.1913133577.1587956580-480563997.1585304727
 
 
-def initial_ssl(username):
-    if username is None:
-        return None, 'PLAINTEXT', None
-
-    sasl_mechanism = 'PLAIN'
-    security_protocol = 'SASL_PLAINTEXT'
-    ssl_context = ssl.create_default_context()
-    ssl_context.options &= ssl.OP_NO_TLSv1
-    ssl_context.options &= ssl.OP_NO_TLSv1_1
-    return sasl_mechanism, security_protocol, ssl_context
-
-
 def initial_consumer(*topic, bootstrap_servers='localhost', group_id=None, auto_offset_reset="earliest",
                      enable_auto_commit=True, sasl_plain_username=None, sasl_plain_password=None,
                      consumer_timeout_ms=float('inf'), value_deserializer=None):
-    sasl_mechanism, security_protocol, ssl_context = initial_ssl(sasl_plain_username)
-
     consumer = Consumer(
         dict(
             {"bootstrap.servers": bootstrap_servers},

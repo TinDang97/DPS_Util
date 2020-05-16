@@ -60,12 +60,17 @@ class DefaultDict(AttrDict):
     - Make sure your dict only store some field.
     """
 
+    def _default_contain(self, key):
+        return key in super().__getattribute__(f"_{self.__class__.__name__}__default")
+
     def get_default(self, key):
         return super().__getattribute__(f"_{self.__class__.__name__}__default")[key]
 
-    def del_default(self, key) -> Tuple[Any]:
-        super().__delitem__(key)
-        return super().__getattribute__(f"_{self.__class__.__name__}__default").pop(key)
+    def del_default(self, key):
+        return self.pop(key)
+
+    def _del_default(self, key) -> Tuple[Any]:
+        return super().__getattribute__(f"_{self.__class__.__name__}__default").__delitem__(key)
 
     def setdefault(self, _k=None, _v=None, **kwargs):
         """
@@ -81,9 +86,8 @@ class DefaultDict(AttrDict):
 
         defaultdict.setdefault(**a)
         """
-        if _k:
-            kwargs.update({_k: _v})
-        super().__getattribute__(f"_{self.__class__.__name__}__default").update(kwargs)
+        configs_default = AttrDict(_k, _v, **kwargs)
+        super().__getattribute__(f"_{self.__class__.__name__}__default").update(configs_default)
 
     def __init__(self, *args, **default_params):
         self._setattr("__default", {})
@@ -113,9 +117,9 @@ class DefaultDict(AttrDict):
         """
         try:
             super().__delitem__(key)
-        except KeyError:
+        except KeyError as e:
             if self.get_default(key) is None:
-                raise KeyError(f"Can't found '{key}'!")
+                raise e
 
     def __setattr__(self, key, value):
         if key not in super().__getattribute__(f"_{self.__class__.__name__}__default"):
@@ -195,10 +199,13 @@ class DefaultDict(AttrDict):
         """
         Clear key and return it's value.
         """
-        value = self.del_default(key)
-        if key not in self:
-            return value
-        return super().pop(key)
+        value = self.get_default(key)
+        self._del_default(key)
+
+        if key in self:
+            value = self.__getitem__(key)
+            self.__delitem__(key)
+        return value
 
     def popitem(self):
         """

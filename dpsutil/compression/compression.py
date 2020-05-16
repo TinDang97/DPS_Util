@@ -6,28 +6,33 @@ COMPRESS_FASTEST = 0
 COMPRESS_BEST = 1
 
 
-def compress(data: bytes, compress_type=COMPRESS_FASTEST, nthreads=blosc.ncores) -> bytes:
+def compress(data: bytes, compress_type=COMPRESS_FASTEST, nthreads=blosc.ncores, level=None) -> bytes:
     """
-    compress(data[, compress_type=COMPRESS_FASTEST, nthreads=blosc.ncores])
+    compress(data[, compress_type=COMPRESS_FASTEST, nthreads=blosc.ncores, level=None])
+    Optionals:
+        - compress_type: [COMPRESS_FASTEST, COMPRESS_BEST]
+        - nthreads: range 0 -> 256. Default is the number of cores in this system.
+        - level: 0-16. If 'level' is None, compress_type will set.
+        Higher values will result in better compression at the cost of more CPU usage.
 
     High speed compress with multi-threading. Implement from blosc.compress
-
     Raise ValueError if size of buffer larger than 2147483631 bytes.
     """
     assert type(data) is bytes
     blosc.set_nthreads(nthreads)
 
     compressor = "lz4" if compress_type == COMPRESS_FASTEST else "zstd"
-    level = 1 if compress_type == COMPRESS_FASTEST else 5
+
+    if level is None:
+        level = 1 if compress_type == COMPRESS_FASTEST else 5
     return blosc.compress(data, cname=compressor, clevel=level)
 
 
-def decompress(binary: bytes) -> bytes:
+def decompress(data) -> bytes:
     """
-    decompress(binary[, output_array=None])
+    decompress(data: bytes)
     """
-    assert type(binary) is bytes
-    return blosc.decompress(binary)
+    return blosc.decompress(data)
 
 
 def compress_ndarray(vectors, compress_type=COMPRESS_FASTEST, nthreads=blosc.ncores) -> bytes:
