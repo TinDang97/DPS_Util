@@ -2,8 +2,8 @@ numpy
 redis
 kafka-python
 lz4
-blosc==1.8.3
-ffmpeg-python==0.2.0
+blosc
+ffmpeg-python
 natsort
 attrdict
 PyTurboJPEG

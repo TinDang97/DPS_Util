@@ -1,9 +1,9 @@
 import io
-from typing import Tuple, Optional, Union
-
-import cv2
 import re
 import struct
+
+import cv2
+from .constant import SD_RESOLUTION
 
 _UNIT_KM = -3
 _UNIT_100M = -2
@@ -345,16 +345,38 @@ def poly2box(polygon):
     return x, y, x + w, y + h
 
 
-def show_image(img, windows_name, windows_size=(800, 600), windows_mode=cv2.WINDOW_NORMAL, wait_time=1,
+def show_image(img, windows_name, windows_size=SD_RESOLUTION, windows_mode=cv2.WINDOW_NORMAL, wait_time=1,
                key_press_exit="q"):
     """
-    Show image
-    - Options:
-        show_time: in milliseconds
-    :return: boolean, True - Stop event from user
+    Show image in RGB format
+
+    Parameters
+    ----------
+    img: numpy.ndarray
+        image array
+
+    windows_name: str
+        Title of window
+
+    windows_size: tuple[int, int]
+        (Default: SD_RESOLUTION) size of window
+
+    windows_mode: int
+        (Default: cv2.WINDOW_NORMAL) Mode of window
+
+    wait_time: int
+        Block time. (-1: infinite)
+
+    key_press_exit: str
+        Key stop event.
+
+    Returns
+    -------
+    bool
+        True - Stop event from user
     """
     cv2.namedWindow(windows_name, windows_mode)
-    cv2.imshow(windows_name, img)
+    cv2.imshow(windows_name, img[:, :, ::-1])
     cv2.resizeWindow(windows_name, *windows_size)
 
     if cv2.waitKey(wait_time) & 0xFF == ord(key_press_exit):
@@ -363,5 +385,25 @@ def show_image(img, windows_name, windows_size=(800, 600), windows_mode=cv2.WIND
     return True
 
 
+def destroy_windows(*windows_name):
+    """
+    Destroy windows if set. Else destroy all
+
+    Parameters
+    ----------
+    windows_name: str
+        List windows name. Empty same mean all windows.
+    """
+    if windows_name:
+        for window_name in windows_name:
+            try:
+                cv2.destroyWindow(window_name)
+            except cv2.error:
+                pass
+    else:
+        cv2.destroyAllWindows()
+
+
 __all__ = ['hex2rgb', 'color_rgb2bgr', 'color_bgr2rgb', 'poly2box', 'show_image', 'image_info', 'image_dpi',
+           'destroy_windows',
            'TIFF_FORMAT', 'JPEG2000_FORMAT', 'JPEG_FORMAT', 'PNG_FORMAT', 'GIF_FORMAT']

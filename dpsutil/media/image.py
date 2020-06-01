@@ -3,11 +3,11 @@ import os
 
 import cv2
 import numpy
-from turbojpeg import TurboJPEG, TJPF_RGB, TJPF_BGR
+from turbojpeg import TurboJPEG, TJPF_RGB, TJPF_RGBA
 
-from .tool import hex2rgb, color_rgb2bgr, image_info, JPEG_FORMAT, JPEG2000_FORMAT
-from .constant import PX_BGR, PX_RGB, DEFAULT_QUALITY, INTER_DEFAULT, ENCODE_PNG, ENCODE_JPEG
 from .constant import FLIP_HORIZONTAL, FLIP_VERTICAL, FLIP_BOTH
+from .constant import PX_BGR, PX_RGB, DEFAULT_QUALITY, INTER_DEFAULT, ENCODE_PNG, ENCODE_JPEG
+from .tool import hex2rgb, color_rgb2bgr, image_info, JPEG_FORMAT, JPEG2000_FORMAT
 
 """
 This tool implement from OpenCV. Can you find more options at https://github.com/opencv/opencv
@@ -19,79 +19,126 @@ Drawing: https://docs.opencv.org/2.4/modules/core/doc/drawing_functions.html
 jpeg_compressor = TurboJPEG()
 
 
-def imencode(img, encode_type=ENCODE_JPEG, quality=DEFAULT_QUALITY, color_format=PX_BGR):
+def imencode(img, encode_type=ENCODE_JPEG, quality=DEFAULT_QUALITY):
     """
-    This function implement from cv2.imencode.
-    Ref PNG: https://docs.opencv.org/2.4/modules/highgui/doc/reading_and_writing_images_and_video.html#imencode
-    Ref JPEG: https://github.com/kkroening/ffmpeg-python
-    Options:
-    - encode_type: ENCODE_JPEG, ENCODE_PNG - Output format of image.
-    - quality: set quality of image after encode. 0 -> 100. *Note: 100 - Lossless compression
-    - color_format: Image - [B, G, R] or [R, G, B) - Format of color image input.
-
+    Encode image implement from OpenCV and TurboJPEG.
     Faster 2-6x at JPEG encoder. Otherwise, 1.1x.
+
+    Parameters
+    ----------
+    img: numpy.ndarray
+        Image's source.
+
+    encode_type: int
+        ENCODE_JPEG (default) | ENCODE_PNG.
+        Output format of image.
+
+    quality: int
+        Quality of image after encode.
+        From worse 0 -> 100 lossless.
+
+    Returns
+    -------
+    bytes
+        Buffer of image.
+
+    References
+    ------
+        .. [1] PNG: https://docs.opencv.org/2.4/modules/highgui/doc/reading_and_writing_images_and_video.html#imencode
+        .. [2] JPEG: https://github.com/kkroening/ffmpeg-python
     """
     if encode_type == ENCODE_JPEG:
-        color_format = TJPF_RGB if color_format == PX_RGB else TJPF_BGR
-        buffer = jpeg_compressor.encode(img, quality=quality, pixel_format=color_format)
+        buffer = jpeg_compressor.encode(img, quality=quality, pixel_format=TJPF_RGB)
     else:
-        if color_format == PX_RGB:
-            img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
-
         quality = max(0, min(int(quality / 10) - 1, 9))
         _, buffer = cv2.imencode(ENCODE_PNG, img, [cv2.IMWRITE_PNG_COMPRESSION, quality])
         buffer = buffer.tobytes()
     return buffer
 
 
-def imdecode(buffer, color_format=PX_BGR) -> numpy.ndarray:
+def imdecode(buffer):
     """
-    This function implement from cv2.imencode.
-    Ref: https://docs.opencv.org/2.4/modules/highgui/doc/reading_and_writing_images_and_video.html#imdecode
-    Options:
-    - color_format: Image - [B, G, R] or [R, G, B) - Format of color image input.
+    Decode image implement from OpenCV and TurboJPEG.
+
+    Parameters
+    ----------
+    buffer: bytes
+        Buffer of image.
+
+    Returns
+    -------
+    numpy.ndarray
+        Numpy array of image.
+
+    References
+    ----------
+        .. [1] PNG - https://docs.opencv.org/2.4/modules/highgui/doc/reading_and_writing_images_and_video.html#imdecode
+        .. [2] JPEG: https://github.com/kkroening/ffmpeg-python
     """
     ext, (_, _) = image_info(buffer)
 
     if ext in [JPEG_FORMAT, JPEG2000_FORMAT]:
-        color_format = TJPF_RGB if color_format == PX_RGB else TJPF_BGR
-        return jpeg_compressor.decode(buffer, pixel_format=color_format)
-
-    image = cv2.imdecode(numpy.frombuffer(buffer, dtype=numpy.uint8), 1)
-    if color_format == PX_RGB:
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-    return image
+        return jpeg_compressor.decode(buffer, pixel_format=TJPF_RGB)
+    return cv2.imdecode(numpy.frombuffer(buffer, dtype=numpy.uint8), 1)
 
 
-def imread(img_path, color_format=PX_BGR):
+def imread(img_path):
     """
-    Read image from file with optimize of speed.
+    Read image from file to numpy.array which decode image implement from OpenCV and TurboJPEG.
+
+    Parameters
+    ----------
+    img_path: str | io.BufferedReader
+        Image's path.
+
+    Returns
+    -------
+    numpy.ndarray
+        Image's array.
     """
-    assert isinstance(img_path, (str, io.BufferedIOBase))
+    assert isinstance(img_path, (str, io.BufferedReader))
 
     if type(img_path) is str:
         img_path = open(img_path, 'rb')
 
     buffer = img_path.read()
-    return imdecode(buffer, color_format=color_format)
+    return imdecode(buffer)
 
 
-def imwrite(img, img_path, encode_type=ENCODE_JPEG, quality=95, color_format=PX_BGR, over_write=False):
+def imwrite(img, img_path, encode_type=ENCODE_JPEG, quality=95, over_write=False):
     """
-    Write image into file with best encoder.
+    Read image from file to numpy.array which encode image implement from OpenCV and TurboJPEG.
     Faster 2-6x at JPEG encoder. Otherwise, 1.1x.
 
-    color_format: current color format of image.
+    Parameters
+    ----------
+    img: numpy.ndarray
+        Image's array
+
+    img_path: str | io.BufferedWriter
+        Image write path.
+
+    encode_type: int
+        ENCODE_JPEG (default) | ENCODE_PNG.
+        Encode format of images. If extension wasn't in path. It's would be added.
+
+    quality: int
+        Quality of image after encode.
+        From worse 0 -> 100 lossless.
+
+    over_write: bool
+        Over write file existed.
     """
-    assert isinstance(img_path, (str, io.BufferedIOBase))
+    assert isinstance(img_path, (str, io.BufferedWriter))
 
     if isinstance(img_path, str):
-        ext = ".jpg"
-        if encode_type == ENCODE_PNG:
-            ext = ".png"
+        ext = "jpg"
 
-        if not ext == img_path[-4:]:
-            img_path = f"{img_path}{ext}"
+        if encode_type == ENCODE_PNG:
+            ext = "png"
+
+        if not ext == img_path.split(".")[-1]:
+            img_path = f"{img_path}.{ext}"
 
         if os.path.isfile(img_path) and not over_write:
             raise FileExistsError
@@ -99,7 +146,8 @@ def imwrite(img, img_path, encode_type=ENCODE_JPEG, quality=95, color_format=PX_
         img_path = open(img_path, 'wb')
 
     with img_path:
-        img_path.write(imencode(img, encode_type=encode_type, quality=quality, color_format=color_format))
+        buffer = imencode(img, encode_type=encode_type, quality=quality)
+        img_path.write(buffer)
 
 
 def crop(img, box=(0, 0, 0, 0)) -> numpy.ndarray:

@@ -100,7 +100,7 @@ class Producer(_ProducerImpl):
         )
 
     def produce(self, topics=None, value=None, key=None, headers=None, partition=-1, on_delivery=None, timestamp=-1,
-                record_topics=True, block=True, timeout=0, *args, **kwargs):
+                record_topics=True, block=True, timeout=-1, *args, **kwargs):
         """
         Produce message to topics.
 

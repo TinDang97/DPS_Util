@@ -63,11 +63,13 @@ class MessageFetcher(object):
         if msg is None:
             raise StopIteration
 
-        # commit message
-        self.commit_func(msg)
-
         # count message
         self.count_msg += 1
+
+        # commit message
+        if self.count_msg % 500 == 0:
+            self.commit_func(msg)
+
         return msg
 
     __enter__ = __iter__ = (lambda self: self)
@@ -154,10 +156,10 @@ class Consumer(_ConsumerImpl):
             topics = [topics]
 
         if on_assign is None:
-            on_assign = (lambda: None)
+            on_assign = (lambda err, msg: None)
 
         if on_revoke is None:
-            on_revoke = (lambda: None)
+            on_revoke = (lambda err, msg: None)
 
         return super(Consumer, self).subscribe(topics, on_assign=on_assign, on_revoke=on_revoke, *args, **kwargs)
 
@@ -236,6 +238,7 @@ class Consumer(_ConsumerImpl):
         RuntimeError
             if called on a closed consumer
         """
+        super(Consumer, self).commit(message=message, offsets=offsets, asynchronous=asynchronous)
 
     def consume(self, num_messages=1, timeout=-1, *args, **kwargs):
         """
