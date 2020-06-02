@@ -457,7 +457,7 @@ class VideoCapture(object):
         if keep_ratio:
             output_size = (
                 int(round(self.__meta.width * (output_size[1] / self.__meta.height))),
-                THUMBNAIL_RESOLUTION[1]
+                output_size[1]
             )
 
         # file output settings
@@ -507,6 +507,16 @@ class VideoCapture(object):
                 "loglevel": log_level,
                 's': f'{preview_output_size[0]}x{preview_output_size[1]}'
             }
+
+            if fps > 0:
+                # manual set
+                pipe_output_opts["r"] = fps
+            elif self.is_stream:
+                # sync with time
+                pipe_output_opts["vsync"] = "vfr"
+            else:
+                # same source file
+                pipe_output_opts["r"] = self.fps
 
             if duration:
                 pipe_output_opts['t'] = duration
