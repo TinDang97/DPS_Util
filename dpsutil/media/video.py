@@ -1,6 +1,6 @@
 import os
 import time
-from queue import Queue, Empty
+from queue import Queue, Empty, Full
 from threading import Thread
 
 import ffmpeg
@@ -52,11 +52,22 @@ class CaptureError(Exception):
     msg: str | Exception | ffmpeg.Error
         Error message
     """
+    START_ERROR = "START_ERROR"
+    STOP_ERROR = "STOP_ERROR"
 
-    def __init__(self, msg):
+    DESCRIPTION = {
+        START_ERROR: "Reader was started!",
+        STOP_ERROR: "Reader wasn't started!"
+    }
+
+    def __init__(self, msg=None, code=None):
         if isinstance(msg, ffmpeg.Error) and hasattr(msg, 'stderr'):
             reason = msg.stderr.decode().strip().split("\n")[-1]
             msg = f"{msg.__repr__()}\noutput: {msg.stdout}\nreason: {reason}"
+
+        if code and code in self.DESCRIPTION:
+            msg = f"{code}: {self.DESCRIPTION[code]}{f'| {msg}' if msg else ''}"
+
         super(Exception, self).__init__(msg)
 
 
@@ -95,33 +106,46 @@ class VideoIterator(object):
     Parameters
     ----------
     stream: ffmpeg.OutputStream
+        Output stream
 
+    size: tuple[int, int]
+        Size of source's frame
+
+    cache_frames: int
+        The number of frame is cached in memory.
+
+    is_stream: bool
+        True, if output stream from camera device or RTSP link
+
+    auto_stop: int
+        (Default: infinite) If process wasn't read frame in seconds, reader would automatic stopped.
     """
     __STOP_BYTES = b'U0U='
 
-    def __init__(self, stream, size, cache_frames=30, is_stream=False):
+    def __init__(self, stream, size, cache_frames=30, is_stream=False, auto_stop=None):
         # prepare reader
         assert isinstance(stream, ffmpeg.nodes.OutputStream)
-        self.stream = ffmpeg.run_async(stream, pipe_stdout=True)
+        self.source_stream = stream
+        self.stream = None
         self.size = size
 
         # prepare pool frame
         self.pool_frames = QueueOverflow(cache_frames) if is_stream else Queue(cache_frames)
-        self.thread = Thread(target=self.__read_buffer)
+        self.thread = None
         self.read_byte_size = self.size[0] * self.size[1] * 3
 
         # metadata
         self.counter = 0
         self.start_time = 0
         self.end_time = 0
+        self.auto_stop = auto_stop
 
     def __iter__(self):
-        if not self.thread.is_alive():
+        if not self.thread:
             self.start()
         return self
 
     def __next__(self):
-        self.counter += 1
         frame = self.get_frame()
 
         if not frame:
@@ -129,51 +153,74 @@ class VideoIterator(object):
         return frame
 
     def fps(self):
-        end_time = self.end_time
-        if self.thread.is_alive():
-            end_time = time.time()
-        return int(round(self.counter // (end_time - self.end_time)))
+        return int(round(self.counter // (self.end_time - self.start_time)))
 
     def start(self):
-        if not self.thread.is_alive():
-            self.thread.start()
+        if self.thread and self.thread.is_alive():
+            raise CaptureError(code=CaptureError.START_ERROR)
 
+        # clear queue
+        with self.pool_frames.mutex:
+            self.pool_frames.queue.clear()
+
+        self.stream = ffmpeg.run_async(self.source_stream, pipe_stdout=True)
+        self.thread = Thread(target=self.__read_buffer)
+        self.thread.start()
+
+        # metadata
         self.start_time = time.time()
-        self.end_time = 0
+        self.end_time = self.start_time
         self.counter = 0
 
     def get_frame(self, time_out=10):
-        if self.end_time > 0:
-            return None
-
         try:
             buffer = self.pool_frames.get(timeout=time_out)
+            self.end_time = time.time()
 
             if buffer == self.__STOP_BYTES:
                 return None
         except Empty:
             return None
 
+        self.counter += 1
         return Frame(buffer, self.size)
 
     def __read_buffer(self):
         while self.stream.poll() is None:
             buffer = self.stream.stdout.read(self.read_byte_size)
 
+            if self.auto_stop and time.time() - self.end_time > self.auto_stop:
+                break
+
             if not buffer:
                 continue
 
-            self.pool_frames.put(buffer)
+            try:
+                self.pool_frames.put(buffer, timeout=self.auto_stop)
+            except Full:
+                break
 
         # Stop record
-        self.end_time = time.time()
-        self.pool_frames.put(self.__STOP_BYTES)
+        try:
+            self.pool_frames.get_nowait()
+        except IndexError:
+            pass
 
-    def close(self):
-        self.stream.terminate()
+        self.pool_frames.put(self.__STOP_BYTES)
+        self.stream.kill()
+        if self.stream.stdout:
+            self.stream.stdout.close()
+        self.stream = None
+        self.thread = None
+
+    def stop(self):
+        if not self.thread:
+            raise CaptureError(code=CaptureError.STOP_ERROR)
+
+        self.stream.kill()
 
     __enter__ = (lambda self: self)
-    __exit__ = (lambda self, exc_type, exc_val, exc_tb: self.close())
+    __exit__ = (lambda self, exc_type, exc_val, exc_tb: self.stop())
 
 
 class VideoInfo(object):
@@ -204,6 +251,9 @@ class VideoCapture(object):
     ----------
     src: str | int
         Support local camera device (int), RTSP, Video.
+
+    transport: str
+        Transport protocol of RTSP streaming. If source link is RTSP link.
 
     Raises
     ------
@@ -237,7 +287,7 @@ class VideoCapture(object):
 
     """
 
-    def __init__(self, src):
+    def __init__(self, src, transport="tcp"):
         self.is_stream = False
 
         # options
@@ -252,7 +302,7 @@ class VideoCapture(object):
 
         # stream
         if src.startswith("rtsp"):
-            opts["rtsp_transport"] = "tcp"
+            opts["rtsp_transport"] = transport
             opts["re"] = None
             self.is_stream = True
 
@@ -268,6 +318,17 @@ class VideoCapture(object):
                f"Size: {self.size}\n" \
                f"FPS: {self.fps}"
 
+    def __iter__(self):
+        """
+        Create iterator with default options of <video:func:read()>
+
+        Returns
+        -------
+        VideoIterator
+            Frame fetcher from capture.
+        """
+        return iter(self.read(auto_stop=3))
+
     @property
     def source(self):
         return self.__meta.src
@@ -280,7 +341,8 @@ class VideoCapture(object):
     def fps(self):
         return self.__meta.fps
 
-    def read(self, output_size=None, keep_ratio=True, duration=0, pix_fmt=RGB24, log_level=LOG_ERROR):
+    def read(self, output_size=None, keep_ratio=True, duration=0, fps=None, pix_fmt=RGB24, auto_stop=None,
+             log_level=LOG_ERROR):
         """
         Generate VideoIterator which yield once frame by frame.
 
@@ -295,8 +357,14 @@ class VideoCapture(object):
         duration: int
             Limited stream duration if set.
 
+        fps: int
+            (Default: None|0 - infinite) Limited stream FPS, which no effect with the video source.
+
         pix_fmt: str
             (Default: RGB24) Format of each pixel in frame.
+
+        auto_stop: int
+            (Default: infinite) If process wasn't read frame in seconds, reader would automatic stopped.
 
         log_level: LogLevel
             Log level of ffmpeg
@@ -329,6 +397,9 @@ class VideoCapture(object):
             "s": f'{output_size[0]}x{output_size[1]}'
         }
 
+        if fps:
+            output_options['r'] = fps
+
         if duration:
             output_options['t'] = duration
 
@@ -341,7 +412,8 @@ class VideoCapture(object):
         return VideoIterator(
             capture,
             self.size,
-            is_stream=self.is_stream
+            is_stream=self.is_stream,
+            auto_stop=auto_stop
         )
 
     def write_images(self, folder_path, prefix="", output_size=None, keep_ratio=True, duration=0, pix_fmt=RGB24,
@@ -398,9 +470,9 @@ class VideoCapture(object):
             file_path = f"{os.path.abspath(folder_path)}/{prefix}{idx}{ext}"
             imwrite(frame.decode(), file_path, encode_type=encode_type, quality=quality, over_write=over_write)
 
-        reader.close()
+        reader.stop()
 
-    def write(self, file_path, over_write=False, encoder=H265_ENCODER, pix_fmt=YUV420P,
+    def write(self, output, over_write=False, encoder=H265_ENCODER, pix_fmt=YUV420P,
               output_size=None, keep_ratio=True, fps=-1, duration=0,
               preview=False, preview_size=SD_RESOLUTION,
               log_level=LOG_ERROR):
@@ -411,8 +483,8 @@ class VideoCapture(object):
 
         Parameters
         ----------
-        file_path: str
-            Path of output file
+        output: str
+            Support: file's path | pipeline ("pipe:") | URL
 
         over_write: bool
             Overwrite existed file if True.
@@ -448,7 +520,7 @@ class VideoCapture(object):
             Log level of ffmpeg
         """
 
-        if os.path.isfile(file_path) and not over_write:
+        if output.startswith("pipe") and os.path.isfile(output) and not over_write:
             raise FileExistsError
 
         if not output_size:
@@ -488,7 +560,7 @@ class VideoCapture(object):
             output_options["r"] = self.fps
 
         capture_output = self.__input_stream \
-            .output(file_path, **output_options) \
+            .output(output, **output_options) \
             .overwrite_output()
 
         # pipe output settings if preview.
@@ -536,7 +608,7 @@ class VideoCapture(object):
                     break
 
             destroy_windows(window_name)
-            capture_output.close()
+            capture_output.stop()
         else:
             capture_output.run()
 

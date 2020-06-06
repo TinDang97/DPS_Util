@@ -1,5 +1,6 @@
+import time
 from collections import deque
-from queue import Queue
+from queue import Queue, Full
 
 
 class QueueOverflow(Queue):

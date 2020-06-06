@@ -37,7 +37,7 @@ class TransformMethod(object):
         self.function = function
 
     def __call__(self, *args, **kwargs):
-        method, args, kwarg = self.function(*args, **kwargs)
+        method, args, kwargs = self.function(*args, **kwargs)
 
         def runner(img):
             return method(img, *args, **kwargs)
