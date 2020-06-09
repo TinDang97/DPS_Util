@@ -130,7 +130,7 @@ class VideoIterator(object):
         self.size = size
 
         # prepare pool frame
-        self.pool_frames = QueueOverflow(cache_frames) if is_stream else Queue(cache_frames)
+        self.pool_frames = QueueOverflow(1) if is_stream else Queue(cache_frames)
         self.thread = None
         self.read_byte_size = self.size[0] * self.size[1] * 3
 
@@ -224,12 +224,18 @@ class VideoIterator(object):
 
 
 class VideoInfo(object):
-    def __init__(self, src):
+    def __init__(self, src, transport="tcp"):
         # check source
         super().__init__()
 
+        opts = {}
+
+        # stream
+        if src.startswith("rtsp"):
+            opts["rtsp_transport"] = transport
+
         try:
-            info_streams = ffmpeg.probe(src)
+            info_streams = ffmpeg.probe(src, **opts)
             self.info = next(stream for stream in info_streams['streams'] if stream['codec_type'] == "video")
         except ffmpeg.Error as e:
             raise CaptureError(e) from None
@@ -307,7 +313,7 @@ class VideoCapture(object):
             self.is_stream = True
 
         # source metadata
-        self.__meta = VideoInfo(src)
+        self.__meta = VideoInfo(src, transport=transport)
 
         # create input cmd
         self.__input_stream = ffmpeg.input(src, **opts)

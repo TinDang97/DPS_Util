@@ -3,7 +3,7 @@ import os
 
 import cv2
 import numpy
-from turbojpeg import TurboJPEG, TJPF_RGB, TJPF_RGBA
+from turbojpeg import TurboJPEG, TJPF_RGB
 
 from .constant import FLIP_HORIZONTAL, FLIP_VERTICAL, FLIP_BOTH
 from .constant import PX_BGR, PX_RGB, DEFAULT_QUALITY, INTER_DEFAULT, ENCODE_PNG, ENCODE_JPEG
@@ -17,6 +17,18 @@ Drawing: https://docs.opencv.org/2.4/modules/core/doc/drawing_functions.html
 """
 
 jpeg_compressor = TurboJPEG()
+
+M_RGB_YUV = numpy.array([
+    [0.29900, -0.16874, 0.50000],
+    [0.58700, -0.33126, -0.41869],
+    [0.11400, 0.50000, -0.08131]
+])
+
+M_YUV_RGB = numpy.array([
+    [1.0, 1.0, 1.0],
+    [-0.000007154783816076815, -0.3441331386566162, 1.7720025777816772],
+    [1.4019975662231445, -0.7141380310058594, 0.00001542569043522235]
+])
 
 
 def imencode(img, encode_type=ENCODE_JPEG, quality=DEFAULT_QUALITY):
@@ -351,13 +363,56 @@ def draw_square(img, position, color=(0, 255, 0)) -> numpy.ndarray:
 def normalize(img, mean, std):
     assert isinstance(img, numpy.ndarray)
 
-    img = img.astype(numpy.float32)/255
+    img = img.astype(numpy.float32) / 255
 
     mean = numpy.asarray(mean, dtype=numpy.float32)
     std = numpy.asarray(std, dtype=numpy.float32)
     return (img - mean[None, None, :]) / std[None, None, :]
 
 
+def RGB2YUV(rgb_image):
+    """
+    Convert image's array in RGB -> YUV
+
+    Parameter
+    ---------
+    rgb_image: numpy.ndarray
+        Image's array is RGB numpy array with shape (height,width,3),
+        can be uint,int, float or double, values expected in the range 0..255
+
+    Returns
+    -------
+    numpy.ndarray
+        Image's array is a double YUV numpy array with shape (height,width,3), values in the range 0..255
+    """
+    yuv_image = numpy.dot(rgb_image, M_RGB_YUV)
+    yuv_image[:, :, 1:] += 128.0
+    return yuv_image
+
+
+def YUV2RGB(yuv_image):
+    """
+    Convert image's array in YUV -> RGB
+
+    Parameter
+    ---------
+    rgb_image: numpy.ndarray
+        Image's array is YUV numpy array with shape (height,width,3),
+        can be uint,int, float or double, values expected in the range 0..255
+
+    Returns
+    -------
+    numpy.ndarray
+        Image's array is a double RGB numpy array with shape (height,width,3), values in the range 0..255
+    """
+
+    rgb_image = numpy.dot(yuv_image, M_YUV_RGB)
+    rgb_image[:, :, 0] -= 179.45477266423404
+    rgb_image[:, :, 1] += 135.45870971679688
+    rgb_image[:, :, 2] -= 226.8183044444304
+    return rgb_image
+
+
 __all__ = ['imencode', 'imdecode', 'imread', 'imwrite', 'crop', 'resize', 'zoom', 'rotate_bound', 'rotate_crop',
-           'draw_text', 'draw_square', 'ENCODE_PNG', 'ENCODE_JPEG', 'PX_BGR',
+           'draw_text', 'draw_square', 'RGB2YUV', 'YUV2RGB', 'ENCODE_PNG', 'ENCODE_JPEG', 'PX_BGR',
            'PX_RGB', 'scale', 'flip', 'crop_margin', 'crop_center']

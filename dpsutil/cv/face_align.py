@@ -31,9 +31,9 @@ class FaceWarpException(Exception):
 
 
 class FaceAligner(object):
-    def __init__(self, output_resolution=112):
-        self.output_size = (output_resolution, output_resolution)
-        self.reference = get_reference_facial_points(default_square=True) * (output_resolution / 112)
+    def __init__(self, output_size=112):
+        self.output_size = (output_size, output_size)
+        self.reference = get_reference_facial_points(default_square=True) * (output_size / 112)
 
     def align(self, image, facial5point):
         assert isinstance(image, numpy.ndarray)
