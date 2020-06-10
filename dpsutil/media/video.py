@@ -417,7 +417,7 @@ class VideoCapture(object):
 
         return VideoIterator(
             capture,
-            self.size,
+            output_size,
             is_stream=self.is_stream,
             auto_stop=auto_stop
         )

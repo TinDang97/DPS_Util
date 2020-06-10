@@ -387,12 +387,12 @@ def RGB2YUV(rgb_image):
     """
     yuv_image = numpy.dot(rgb_image, M_RGB_YUV)
     yuv_image[:, :, 1:] += 128.0
-    return yuv_image
+    return yuv_image.astype(numpy.uint8)
 
 
 def YUV2RGB(yuv_image):
     """
-    Convert image's array in YUV -> RGB
+    Convert image's array in YUV -> RGB color-space
 
     Parameter
     ---------
@@ -410,7 +410,7 @@ def YUV2RGB(yuv_image):
     rgb_image[:, :, 0] -= 179.45477266423404
     rgb_image[:, :, 1] += 135.45870971679688
     rgb_image[:, :, 2] -= 226.8183044444304
-    return rgb_image
+    return rgb_image.astype(numpy.uint8)
 
 
 __all__ = ['imencode', 'imdecode', 'imread', 'imwrite', 'crop', 'resize', 'zoom', 'rotate_bound', 'rotate_crop',
