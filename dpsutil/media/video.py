@@ -99,6 +99,30 @@ class Frame(object):
             img.write(self.encode(encode_type=encode_type, quality=quality))
 
 
+class BufferReader(object):
+    def __init__(self, stream, chunk_size):
+        self.source_stream = stream
+        self.stream = None
+        self.chunk_size = chunk_size
+
+        # prepare pool frame
+        self.pool_frames = Queue()
+        self.thread = None
+
+    def __iter__(self):
+        self.stream = ffmpeg.run_async(self.source_stream, pipe_stdout=True)
+        self.thread = Thread(target=self.read_buffer).start()
+        return self
+
+    def __next__(self):
+        return self.pool_frames.get()
+
+    def read_buffer(self):
+        while self.stream.poll() is None:
+            buffer = self.stream.stdout.read(self.chunk_size)
+            self.pool_frames.put(buffer)
+
+
 class VideoIterator(object):
     """
     VideoCapture iterator
@@ -346,6 +370,89 @@ class VideoCapture(object):
     @property
     def fps(self):
         return self.__meta.fps
+
+    def read2pipe(self, encoder=H264_ENCODER, chunk_size=128, output_size=None, keep_ratio=True, duration=0, fps=0, pix_fmt=RGB24, auto_stop=None,
+                  log_level=LOG_ERROR):
+        """
+        Generate VideoIterator which yield once frame by frame.
+
+        Parameters
+        ---------
+        encoder: str
+
+        chunk_size: int
+
+        output_size: tuple[int, int]
+            Output size of stream
+
+        keep_ratio: bool
+            If True, width will change to fix with height ratio. w *= h_new / h_old
+
+        duration: int
+            Limited stream duration if set.
+
+        fps: int
+            (Default: None|0 - infinite) Limited stream FPS, which no effect with the video source.
+
+        pix_fmt: str
+            (Default: RGB24) Format of each pixel in frame.
+
+        auto_stop: int
+            (Default: infinite) If process wasn't read frame in seconds, reader would automatic stopped.
+
+        log_level: LogLevel
+            Log level of ffmpeg
+
+        Returns
+        -------
+        VideoIterator
+            Frame fetcher.
+
+        Raises
+        ------
+        CaptureError
+            If output_size <= (-1, -1)
+        """
+        input_stream = self.__input_stream
+
+        if not output_size:
+            output_size = self.size
+
+        if keep_ratio:
+            output_size = (
+                int(round(self.__meta.width * (output_size[1] / self.__meta.height))),
+                output_size[1]
+            )
+
+        output_options = {
+            "c:v": encoder,
+            "format": 'h264' if encoder == H264_ENCODER else "h265",
+            "pix_fmt": pix_fmt,
+            "loglevel": log_level,
+            "s": f'{output_size[0]}x{output_size[1]}'
+        }
+
+        # handle FPS
+        if fps > 0:
+            # manual set
+            output_options["r"] = fps
+        elif self.is_stream:
+            # sync with time
+            output_options["vsync"] = "vfr"
+        else:
+            # same source file
+            output_options["r"] = self.fps
+
+        if duration:
+            output_options['t'] = duration
+
+        capture = ffmpeg.output(
+            input_stream,
+            'pipe:',
+            **output_options
+        )
+
+        return BufferReader(capture, chunk_size)
 
     def read(self, output_size=None, keep_ratio=True, duration=0, fps=None, pix_fmt=RGB24, auto_stop=None,
              log_level=LOG_ERROR):
