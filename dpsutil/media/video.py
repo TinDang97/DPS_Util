@@ -426,6 +426,8 @@ class VideoCapture(object):
 
         output_options = {
             "c:v": encoder,
+            "preset": "veryfast",
+            "vprofile": "baseline",
             "format": 'h264' if encoder == H264_ENCODER else "h265",
             "pix_fmt": pix_fmt,
             "loglevel": log_level,
