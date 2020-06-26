@@ -18,7 +18,7 @@ def cosine_similarity(x1, x2, skip_normalize=False):
         x2 = numpy.array(x2)
 
     assert type(x1) is numpy.ndarray or type(x2) is numpy.ndarray
-    assert x1.shape == x2.shape
+    assert x1.shape[-1] == x2.shape[-1]
     assert len(x1.shape) <= 2
 
     if not skip_normalize:

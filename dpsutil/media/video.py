@@ -229,6 +229,8 @@ class VideoIterator(object):
             self.pool_frames.get_nowait()
         except IndexError:
             pass
+        except Empty:
+            pass
 
         self.pool_frames.put(self.__STOP_BYTES)
         self.stream.kill()

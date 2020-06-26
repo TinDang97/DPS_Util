@@ -360,9 +360,6 @@ class VectorPoolBase(object):
             else:
                 get_indexes = [self.__used_indexes[idx] for idx in indexes]
 
-            if not get_indexes:
-                return None
-
             output = self._vector_pool[get_indexes]
             self.__locker_clean.notify()
         return output
