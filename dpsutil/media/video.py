@@ -270,9 +270,10 @@ class VideoInfo(object):
 
         # meta-data
         self.src = src
-        self.fps = round(eval(self.info['r_frame_rate']))
+        self.fps = round(eval(self.info['avg_frame_rate']))
         self.height = self.info['height']
         self.width = self.info['width']
+        self.rotation = self.info['tags']['rotate']
 
 
 class VideoCapture(object):
@@ -507,6 +508,9 @@ class VideoCapture(object):
                 output_size[1]
             )
 
+        if self.__meta.rotation in ['90', '270']:
+            output_size = output_size[::-1]
+
         output_options = {
             "format": 'rawvideo',
             "pix_fmt": pix_fmt,
@@ -525,6 +529,7 @@ class VideoCapture(object):
             'pipe:',
             **output_options
         )
+
 
         return VideoIterator(
             capture,
