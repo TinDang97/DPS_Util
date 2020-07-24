@@ -254,7 +254,9 @@ class VideoInfo(object):
         # check source
         super().__init__()
 
-        opts = {}
+        opts = {
+            "probesize": 32
+        }
 
         # stream
         if src.startswith("rtsp"):
@@ -270,10 +272,18 @@ class VideoInfo(object):
 
         # meta-data
         self.src = src
-        self.fps = round(eval(self.info['avg_frame_rate']))
+        try:
+            self.fps = round(eval(self.info['avg_frame_rate']))
+        except ZeroDivisionError:
+            self.fps = round(eval(self.info['r_frame_rate']))
+
         self.height = self.info['height']
         self.width = self.info['width']
-        self.rotation = self.info['tags']['rotate']
+
+        try:
+            self.rotation = self.info['tags']['rotate']
+        except KeyError:
+            self.rotation = None
 
 
 class VideoCapture(object):
@@ -374,8 +384,8 @@ class VideoCapture(object):
     def fps(self):
         return self.__meta.fps
 
-    def read2pipe(self, encoder=H264_ENCODER, chunk_size=128, output_size=None, keep_ratio=True, duration=0, fps=0, pix_fmt=RGB24, auto_stop=None,
-                  log_level=LOG_ERROR):
+    def read2pipe(self, encoder=H264_ENCODER, chunk_size=128, output_size=None, keep_ratio=True, duration=0, fps=0,
+                  pix_fmt=RGB24, log_level=LOG_ERROR):
         """
         Generate VideoIterator which yield once frame by frame.
 
@@ -399,9 +409,6 @@ class VideoCapture(object):
 
         pix_fmt: str
             (Default: RGB24) Format of each pixel in frame.
-
-        auto_stop: int
-            (Default: infinite) If process wasn't read frame in seconds, reader would automatic stopped.
 
         log_level: LogLevel
             Log level of ffmpeg
@@ -427,6 +434,9 @@ class VideoCapture(object):
                 output_size[1]
             )
 
+        if self.__meta.rotation in ['90', '270']:
+            output_size = output_size[::-1]
+
         output_options = {
             "c:v": encoder,
             "preset": "veryfast",
@@ -434,8 +444,11 @@ class VideoCapture(object):
             "format": 'h264' if encoder == H264_ENCODER else "h265",
             "pix_fmt": pix_fmt,
             "loglevel": log_level,
-            "s": f'{output_size[0]}x{output_size[1]}'
+            'probesize': 32
         }
+
+        if output_size != self.size:
+            output_options["s"] = f'{output_size[0]}x{output_size[1]}'
 
         # handle FPS
         if fps > 0:
@@ -515,8 +528,11 @@ class VideoCapture(object):
             "format": 'rawvideo',
             "pix_fmt": pix_fmt,
             "loglevel": log_level,
-            "s": f'{output_size[0]}x{output_size[1]}'
+            'probesize': 32
         }
+
+        if output_size != self.size:
+            output_options["s"] = f'{output_size[0]}x{output_size[1]}'
 
         if fps:
             output_options['r'] = fps
@@ -529,7 +545,6 @@ class VideoCapture(object):
             'pipe:',
             **output_options
         )
-
 
         return VideoIterator(
             capture,
