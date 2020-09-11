@@ -66,7 +66,7 @@ class AttrDict(attrdict.AttrDict):
                 else:
                     k = pair
                     v = __value
-                self[k] = v
+                super(AttrDict, self).__setitem__(k, v)
 
     def __repr__(self):
         string = ""
@@ -77,7 +77,7 @@ class AttrDict(attrdict.AttrDict):
                 string = f"{string} | {k}={v}"
             else:
                 string = f"{k}={v}"
-        return f"{{{string}}}"
+        return f"| {string} |"
 
     def copy(self):
         return AttrDict(self)

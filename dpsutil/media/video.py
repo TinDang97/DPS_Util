@@ -110,7 +110,6 @@ class BufferReader(object):
         self.thread = None
 
     def __iter__(self):
-        self.stream = ffmpeg.run_async(self.source_stream, pipe_stdout=True)
         self.thread = Thread(target=self.read_buffer).start()
         return self
 
@@ -118,6 +117,7 @@ class BufferReader(object):
         return self.pool_frames.get()
 
     def read_buffer(self):
+        self.stream = ffmpeg.run_async(self.source_stream, pipe_stdout=True)
         while self.stream.poll() is None:
             buffer = self.stream.stdout.read(self.chunk_size)
             self.pool_frames.put(buffer)
@@ -187,7 +187,6 @@ class VideoIterator(object):
         with self.pool_frames.mutex:
             self.pool_frames.queue.clear()
 
-        self.stream = ffmpeg.run_async(self.source_stream, pipe_stdout=True)
         self.thread = Thread(target=self.__read_buffer)
         self.thread.start()
 
@@ -210,6 +209,7 @@ class VideoIterator(object):
         return Frame(buffer, self.size)
 
     def __read_buffer(self):
+        self.stream = ffmpeg.run_async(self.source_stream, pipe_stdout=True)
         while self.stream.poll() is None:
             buffer = self.stream.stdout.read(self.read_byte_size)
 
@@ -472,7 +472,7 @@ class VideoCapture(object):
 
         return BufferReader(capture, chunk_size)
 
-    def read(self, output_size=None, keep_ratio=True, duration=0, fps=None, pix_fmt=RGB24, auto_stop=None,
+    def read(self, output_size=None, keep_ratio=True, duration=0, fps=0, pix_fmt=RGB24, auto_stop=None,
              log_level=LOG_ERROR):
         """
         Generate VideoIterator which yield once frame by frame.
@@ -534,8 +534,16 @@ class VideoCapture(object):
         if output_size != self.size:
             output_options["s"] = f'{output_size[0]}x{output_size[1]}'
 
-        if fps:
-            output_options['r'] = fps
+        # handle FPS
+        if fps > 0:
+            # manual set
+            output_options["r"] = fps
+        elif self.is_stream:
+            # sync with time
+            output_options["vsync"] = "vfr"
+        else:
+            # same source file
+            output_options["r"] = self.fps
 
         if duration:
             output_options['t'] = duration

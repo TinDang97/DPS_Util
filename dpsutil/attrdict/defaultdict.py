@@ -394,4 +394,12 @@ class DefaultTypeDict(DefaultDict):
         return value
 
 
-__all__ = ['DefaultDict', 'DefaultTypeDict', 'TypedDict']
+class ReadOnlyDict(AttrDict):
+    def __setitem__(self, key, value):
+        raise AttributeError("Read only!")
+
+    def __setattr__(self, key, value):
+        raise AttributeError("Read only!")
+
+
+__all__ = ['DefaultDict', 'DefaultTypeDict', 'TypedDict', 'ReadOnlyDict']

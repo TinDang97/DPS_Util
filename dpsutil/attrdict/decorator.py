@@ -1,4 +1,4 @@
-from dpsutil.attrdict import AttrDict, DefaultDict, DefaultTypeDict
+from dpsutil.attrdict import AttrDict, DefaultDict, DefaultTypeDict, ReadOnlyDict
 import inspect
 
 
@@ -61,6 +61,22 @@ def attribute_dict(_cls):
     def instance():
         return AttrDict(_get_vars_cls(_cls))
     return instance
+
+
+def readonly_dict(_cls):
+    """
+    Decorator that it create dict by attribute of class.
+    Support attribute alias:
+        @attrdict.attribute_dict
+        class CustomDict:
+            a=1
+            b=2
+
+        custom_dict = CustomDict()
+        custom_dict.a   # return: 1
+        custom_dict.b   # return: 2
+    """
+    return ReadOnlyDict(_get_vars_cls(_cls))
 
 
 def default_dict(_cls):
