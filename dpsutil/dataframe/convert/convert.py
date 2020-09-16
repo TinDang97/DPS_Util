@@ -1,3 +1,8 @@
+from binascii import unhexlify, hexlify
+
+from dpsutil.common import check_type_instance
+
+
 def cvt_str2byte(string):
     check_type_instance(string, str)
     return ''.join(map(lambda x: f"{ord(x):08b}", string)).encode()

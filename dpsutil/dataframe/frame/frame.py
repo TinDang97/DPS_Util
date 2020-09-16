@@ -11,9 +11,8 @@ class Frame(object):
     work with vectors, image's frame and numpy.ndarray like.
 
     Support multi-type frame: buffer, numpy.ndarray
-    Auto compress and decompress if data is raw frame (pixel array - numpy.ndarray)
+    Auto compress and decompress if dataframe is raw frame (pixel array - numpy.ndarray)
     """
-    MAX_SIZE = 4000, 3000
 
     @property
     def size(self):
@@ -51,7 +50,7 @@ class Frame(object):
 
     def encode(self, compress_type=ENCODE_JPEG, quality=DEFAULT_QUALITY):
         """
-        Like `tobytes` function but require frame's data is image bytearray.
+        Like `tobytes` function but require frame's dataframe is image bytearray.
         :return:
         """
         if not isinstance(self.frame, numpy.ndarray) or self.frame.dtype != numpy.uint8:
@@ -61,7 +60,7 @@ class Frame(object):
     @classmethod
     def decode(cls, data):
         """
-        Like `from_buffer` function but only support if data is image buffer.
+        Like `from_buffer` function but only support if dataframe is image buffer.
         :param data:
         :return:
         """
@@ -79,9 +78,6 @@ class Frame(object):
 
             if len(frame_size) != 2:
                 raise ValueError("Require frame_size is (width, height)!")
-
-            if frame_size > self.MAX_SIZE:
-                raise ValueError(f"Frame's size too large. MAXSIZE = {self.MAX_SIZE}")
 
             if not isinstance(frame, numpy.ndarray):
                 if dtype is None:

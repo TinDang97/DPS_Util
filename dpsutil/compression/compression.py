@@ -4,7 +4,7 @@ import warnings
 import blosc
 import numpy
 
-from dpsutil.data.convert import cvt_dec2hex, cvt_hex2dec, cvt_hex2str, cvt_str2hex
+from dpsutil.dataframe.convert import cvt_dec2hex, cvt_hex2dec, cvt_hex2str, cvt_str2hex
 
 COMPRESS_FASTEST = 0
 COMPRESS_BEST = 1

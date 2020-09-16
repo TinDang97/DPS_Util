@@ -3,7 +3,7 @@ import os
 
 import cv2
 import numpy
-from turbojpeg import TurboJPEG, TJPF_RGB
+from turbojpeg import TurboJPEG, TJPF_BGR
 
 from .constant import FLIP_HORIZONTAL, FLIP_VERTICAL, FLIP_BOTH
 from .constant import PX_BGR, PX_RGB, DEFAULT_QUALITY, INTER_DEFAULT, ENCODE_PNG, ENCODE_JPEG
@@ -31,7 +31,7 @@ M_YUV_RGB = numpy.array([
 ])
 
 
-def imencode(img, encode_type=ENCODE_JPEG, quality=DEFAULT_QUALITY):
+def imencode(img, encode_type=ENCODE_JPEG, quality=DEFAULT_QUALITY, pixel_format=TJPF_BGR):
     """
     Encode image implement from OpenCV and TurboJPEG.
     Faster 2-6x at JPEG encoder. Otherwise, 1.1x.
@@ -49,6 +49,9 @@ def imencode(img, encode_type=ENCODE_JPEG, quality=DEFAULT_QUALITY):
         Quality of image after encode.
         From worse 0 -> 100 lossless.
 
+    pixel_format: int
+        Pixel's format of input.
+
     Returns
     -------
     bytes
@@ -60,7 +63,7 @@ def imencode(img, encode_type=ENCODE_JPEG, quality=DEFAULT_QUALITY):
         .. [2] JPEG: https://github.com/kkroening/ffmpeg-python
     """
     if encode_type == ENCODE_JPEG:
-        buffer = jpeg_compressor.encode(img, quality=quality, pixel_format=TJPF_RGB)
+        buffer = jpeg_compressor.encode(img, quality=quality, pixel_format=pixel_format)
     else:
         quality = max(0, min(int(quality / 10) - 1, 9))
         _, buffer = cv2.imencode(ENCODE_PNG, img, [cv2.IMWRITE_PNG_COMPRESSION, quality])
@@ -68,7 +71,7 @@ def imencode(img, encode_type=ENCODE_JPEG, quality=DEFAULT_QUALITY):
     return buffer
 
 
-def imdecode(buffer):
+def imdecode(buffer, pixel_format=TJPF_BGR):
     """
     Decode image implement from OpenCV and TurboJPEG.
 
@@ -76,6 +79,9 @@ def imdecode(buffer):
     ----------
     buffer: bytes
         Buffer of image.
+
+    pixel_format: int
+        Pixel's format of output.
 
     Returns
     -------
@@ -90,11 +96,11 @@ def imdecode(buffer):
     ext, (_, _) = image_info(buffer)
 
     if ext in [JPEG_FORMAT, JPEG2000_FORMAT]:
-        return jpeg_compressor.decode(buffer, pixel_format=TJPF_RGB)
+        return jpeg_compressor.decode(buffer, pixel_format)
     return cv2.imdecode(numpy.frombuffer(buffer, dtype=numpy.uint8), 1)
 
 
-def imread(img_path):
+def imread(img_path, pixel_format=TJPF_BGR):
     """
     Read image from file to numpy.array which decode image implement from OpenCV and TurboJPEG.
 
@@ -102,6 +108,9 @@ def imread(img_path):
     ----------
     img_path: str | io.BufferedReader
         Image's path.
+
+    pixel_format: int
+        Pixel's format of output.
 
     Returns
     -------
@@ -114,10 +123,10 @@ def imread(img_path):
         img_path = open(img_path, 'rb')
 
     buffer = img_path.read()
-    return imdecode(buffer)
+    return imdecode(buffer, pixel_format=pixel_format)
 
 
-def imwrite(img, img_path, encode_type=ENCODE_JPEG, quality=95, over_write=False):
+def imwrite(img, img_path, encode_type=ENCODE_JPEG, quality=95, pixel_format=TJPF_BGR, over_write=False):
     """
     Read image from file to numpy.array which encode image implement from OpenCV and TurboJPEG.
     Faster 2-6x at JPEG encoder. Otherwise, 1.1x.
@@ -137,6 +146,9 @@ def imwrite(img, img_path, encode_type=ENCODE_JPEG, quality=95, over_write=False
     quality: int
         Quality of image after encode.
         From worse 0 -> 100 lossless.
+
+    pixel_format: int
+        Pixel's format of input.
 
     over_write: bool
         Over write file existed.
@@ -158,7 +170,7 @@ def imwrite(img, img_path, encode_type=ENCODE_JPEG, quality=95, over_write=False
         img_path = open(img_path, 'wb')
 
     with img_path:
-        buffer = imencode(img, encode_type=encode_type, quality=quality)
+        buffer = imencode(img, encode_type=encode_type, quality=quality, pixel_format=pixel_format)
         img_path.write(buffer)
 
 
