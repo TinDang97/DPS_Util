@@ -7,7 +7,7 @@ with open("requirements.txt", "r") as rf:
     requirements = rf.read().split()
 
 setup(name='dpsutil',
-      version='1.4.0',
+      version='1.4.1',
       description='This repository contain all util',
       long_description=long_description,
       long_description_content_type="text/markdown",
