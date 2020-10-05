@@ -77,7 +77,9 @@ def readonly_dict(_cls):
         custom_dict.a   # return: 1
         custom_dict.b   # return: 2
     """
-    return ReadOnlyDict(_get_vars_cls(_cls))
+    def instance():
+        return ReadOnlyDict(_get_vars_cls(_cls))
+    return instance
 
 
 def default_dict(_cls):
@@ -141,5 +143,3 @@ def default_typed_dict(_cls):
             base_dict.setdefault(_key, _value)
         return base_dict
     return instance
-
-

@@ -1,6 +1,6 @@
 numpy
 redis
-kafka-python
+confluent_kafka
 lz4
 blosc
 ffmpeg-python
