@@ -6,7 +6,7 @@ import numpy
 from turbojpeg import TurboJPEG, TJPF_BGR
 
 from .constant import FLIP_HORIZONTAL, FLIP_VERTICAL, FLIP_BOTH
-from .constant import PX_BGR, PX_RGB, DEFAULT_QUALITY, INTER_DEFAULT, ENCODE_PNG, ENCODE_JPEG
+from .constant import PX_BGR, PX_RGB, DEFAULT_QUALITY, ENCODE_PNG, ENCODE_JPEG
 from .tool import hex2rgb, color_rgb2bgr, image_info, JPEG_FORMAT, JPEG2000_FORMAT
 
 """
@@ -227,28 +227,23 @@ def crop_center(img, crop_size) -> numpy.ndarray:
     return crop(img, (x, y, width_crop, height_crop))
 
 
-def resize(img, size, keep_ratio=False, inter_method=INTER_DEFAULT):
+def resize(img, width=None, height=None, interpolation=None):
     """
-    This function resize with keep_ratio. Auto downscale or upscale fit with image's height.
+    This function resize with keep ratio supported. Auto downscale or upscale fit with image's height.
     """
     assert isinstance(img, numpy.ndarray)
 
-    new_width, new_height = size
-    old_h, old_w, _ = img.shape
-
-    if old_h == new_height and old_w == new_width:
+    # check any width or height parameters was filled.
+    if (width is None and height is None) or not ((not width or width > 0) or (not height or height > 0)):
         return img
 
-    if keep_ratio:
-        if new_height == old_h:
-            return img
+    old_h, old_w, _ = img.shape
+    if not width or width <= 0:
+        width = height / old_h * old_w
 
-        ratio = new_height / old_h
-        new_width = old_w * ratio
-
-    new_width = round(new_width)
-    new_height = round(new_height)
-    return cv2.resize(img, (new_width, new_height), interpolation=inter_method)
+    if not height or height <= 0:
+        height = width / old_w * old_h
+    return cv2.resize(img, (int(width), int(height)), interpolation=interpolation)
 
 
 def flip(img, flip_mode):
@@ -267,9 +262,16 @@ def zoom(img: numpy.ndarray, zoom_level: float, center=None) -> numpy.ndarray:
     """
     Zoom image at position.
 
-    Params:
-        zoom_level: integer. Level of zoom. Example: 1x == 1, 1.5x==1.5, 2x == 2...
-        center: center of image's zoomed. Default: center old image.
+    Parameters
+    ----------
+    img: numpy.ndarray
+        Image's array
+
+    zoom_level: int
+        Level of zoom. Example: 1x == 1, 1.5x==1.5, 2x == 2...
+
+    center: tuple of int
+        Center of image's zoomed. Default: center old image.
     """
     assert isinstance(img, numpy.ndarray)
     assert type(center) in [type(None), tuple]
@@ -285,11 +287,12 @@ def zoom(img: numpy.ndarray, zoom_level: float, center=None) -> numpy.ndarray:
     else:
         center = (w // 2, h // 2)
 
-    rotate_matix = cv2.getRotationMatrix2D(center, 0, float(zoom_level))
-    return cv2.warpAffine(img, rotate_matix, (w, h))
+    rotate_matrix = cv2.getRotationMatrix2D(center, 0, float(zoom_level))
+    return cv2.warpAffine(img, rotate_matrix, (w, h))
 
 
-def scale(img, box=(0, 0, 0, 0), output_size=None):
+def crop_scale(img, box=(0, 0, 0, 0), output_size=None):
+    """Crop image and scale to output_size if it's set"""
     if not numpy.any(box):
         box = (0, 0, *img.shape[:2][::-1])
 
@@ -337,7 +340,8 @@ def rotate_crop(img, angle, center=None) -> numpy.ndarray:
     return cv2.warpAffine(img, rotate_matix, (h, w))
 
 
-def draw_text(img, label, position, color=(0, 0, 255), scale_factor=1, thickness=1) -> numpy.ndarray:
+def draw_text(img, label, position, color=(0, 0, 255), scale_factor=1, thickness=1,
+              font=cv2.FONT_HERSHEY_DUPLEX, wrap_text=False) -> numpy.ndarray:
     """
     Draw text at position in image.
     - position: top-left of text
@@ -351,11 +355,28 @@ def draw_text(img, label, position, color=(0, 0, 255), scale_factor=1, thickness
         color = hex2rgb(color)
         color = color_rgb2bgr(color)
 
-    return cv2.putText(img, label, position,
-                       fontFace=cv2.FONT_HERSHEY_DUPLEX, fontScale=scale_factor, color=color, thickness=thickness)
+    if wrap_text:
+        for i, line in enumerate(label.split('\n')):
+            text_size = cv2.getTextSize(line, fontFace=font, fontScale=scale_factor, thickness=thickness)[0]
+
+            gap = text_size[1] + 10
+
+            y = int((img.shape[0] + text_size[1]) / 2) + i * gap
+            x = int((img.shape[1] - text_size[0]) / 2)
+
+            cv2.putText(img, line, (x, y),
+                        fontFace=font,
+                        color=color,
+                        fontScale=scale_factor,
+                        thickness=thickness,
+                        lineType=cv2.LINE_AA)
+    else:
+        cv2.putText(img, label, position,
+                    fontFace=cv2.FONT_HERSHEY_DUPLEX, fontScale=scale_factor, color=color, thickness=thickness)
+    return img
 
 
-def draw_square(img, position, color=(0, 255, 0)) -> numpy.ndarray:
+def draw_square(img, position, color=(0, 255, 0), thickness=1, line_type=None, shift=None) -> numpy.ndarray:
     """
     Draw text at position in image.
     - position: top-left, bottom-right of square
@@ -369,7 +390,7 @@ def draw_square(img, position, color=(0, 255, 0)) -> numpy.ndarray:
         color = hex2rgb(color)
         color = color_rgb2bgr(color)
 
-    return cv2.rectangle(img, position[0:2], position[2:4], color, 2)
+    return cv2.rectangle(img, position[0:2], position[2:4], color, thickness=thickness, lineType=line_type, shift=shift)
 
 
 def normalize(img, mean, std):
@@ -427,4 +448,4 @@ def YUV2RGB(yuv_image):
 
 __all__ = ['imencode', 'imdecode', 'imread', 'imwrite', 'crop', 'resize', 'zoom', 'rotate_bound', 'rotate_crop',
            'draw_text', 'draw_square', 'RGB2YUV', 'YUV2RGB', 'ENCODE_PNG', 'ENCODE_JPEG', 'PX_BGR',
-           'PX_RGB', 'scale', 'flip', 'crop_margin', 'crop_center']
+           'PX_RGB', 'crop_scale', 'flip', 'crop_margin', 'crop_center']
