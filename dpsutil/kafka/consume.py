@@ -16,10 +16,10 @@ class MessageFetcher(object):
 
     Parameters
     ----------
-    poll_func: function
+    poll_func: func
         Function poll message from broker
 
-    commit_func: function
+    commit_func: func
         Function commit message
 
     max_message: int
@@ -113,7 +113,7 @@ class Consumer(_ConsumerImpl):
         configs = ConsumerConfigs({"group.id": group_id}, **configs)
         self._value_deserializer = configs.pop('value.deserializer')
         self._key_deserializer = configs.pop('key.deserializer')
-        super().__init__(configs)
+        super().__init__(**configs)
 
         if topics:
             self.subscribe(topics)

@@ -1,5 +1,3 @@
-import json
-
 import attrdict
 
 from dpsutil.compression import compress_list, decompress_list, COMPRESS_FASTEST
@@ -75,12 +73,11 @@ class AttrDict(attrdict.AttrDict):
         for k, v in self.items():
             if type(v) is str:
                 v = f"\"{v}\""
-            if string:
-                string += f"\n\t{k}={v}"
-        return f"{self.__class__}{string}"
+            string += f"\n\t\"{k}\": {v}"
+        return f"{self.__class__.__name__}:{string}"
 
     def __str__(self):
-        return json.dumps(self)
+        return super(attrdict.AttrDict, self).__repr__()
 
     def copy(self):
         return AttrDict(self)
