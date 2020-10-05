@@ -79,6 +79,13 @@ class AttrDict(attrdict.AttrDict):
     def __str__(self):
         return super(attrdict.AttrDict, self).__repr__()
 
+    def __bytes__(self) -> bytes:
+        """
+        This compress all values of dict. Ref: "to_array"
+        :return:
+        """
+        return compress_list(self.to_array(), compress_type=COMPRESS_FASTEST)
+
     def copy(self):
         return AttrDict(self)
 
@@ -133,16 +140,23 @@ class AttrDict(attrdict.AttrDict):
         # compress
         return compress_list(_data, compress_type=compress_type)
 
-    def __bytes__(self) -> bytes:
-        """
-        This compress all values of dict. Ref: "to_array"
-        :return:
-        """
-        return compress_list(self.to_array(), compress_type=COMPRESS_FASTEST)
-
     @classmethod
     def fromkeys(cls, *args, **kwargs):
         return cls(*args, **kwargs)
 
 
-__all__ = ['AttrDict']
+class ReadOnlyDict(AttrDict):
+    def __setitem__(self, key, value):
+        raise AttributeError("Read only!")
+
+    def __setattr__(self, key, value):
+        raise AttributeError("Read only!")
+
+    def __delitem__(self, *args, **kwargs):
+        raise AttributeError("Read only")
+
+    def __delattr__(self, *args, **kwargs):
+        raise AttributeError("Read only")
+
+
+__all__ = ['AttrDict', 'ReadOnlyDict']

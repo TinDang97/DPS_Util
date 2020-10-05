@@ -213,11 +213,6 @@ class TypedDict(AttrDict):
         self._setattr('__args', _args)
         self._setattr('__kwargs', _kwargs)
 
-    def add(self, key, value=None, force=False):
-        if key in self and not force:
-            raise KeyError(f'Key "{key}" was existed!')
-        self.__setitem__(key, value)
-
     def __setitem__(self, key, value=None):
         if value is None:
             value = self.type(*self.__getattribute__(f"_{self.__class__.__name__}__args"),
@@ -230,6 +225,11 @@ class TypedDict(AttrDict):
                 e.args = f"Default is {self.type}. Got {type(value)}",
                 raise e
         super().__setitem__(key, value)
+
+    def add(self, key, value=None, force=False):
+        if key in self and not force:
+            raise KeyError(f'Key "{key}" was existed!')
+        self.__setitem__(key, value)
 
     @property
     def type(self):
@@ -296,16 +296,6 @@ class DefaultTypeDict(DefaultDict):
         custom_dict.a   # return: 1.0
         custom_dict.b   # return: 2
     """
-    def setdefault(self, _k=None, _v=None, **kwargs):
-        super().setdefault(_k, _v, **kwargs)
-
-        if _k:
-            kwargs.update({_k: _v})
-        for k, v in kwargs.items():
-            _type = v if isclass(v) else v.__class__
-            if k in self and not isinstance(self[k], _type):
-                self[k] = _type(self[k])
-
     def __setitem__(self, key, value):
         if key not in super().__getattribute__(f"_{self.__class__.__name__}__default"):
             raise KeyError(f"Not found '{key}'")
@@ -344,13 +334,15 @@ class DefaultTypeDict(DefaultDict):
                 raise e
         return super().__setattr__(key, value)
 
+    def setdefault(self, _k=None, _v=None, **kwargs):
+        super().setdefault(_k, _v, **kwargs)
 
-class ReadOnlyDict(AttrDict):
-    def __setitem__(self, key, value):
-        raise AttributeError("Read only!")
+        if _k:
+            kwargs.update({_k: _v})
+        for k, v in kwargs.items():
+            _type = v if isclass(v) else v.__class__
+            if k in self and not isinstance(self[k], _type):
+                self[k] = _type(self[k])
 
-    def __setattr__(self, key, value):
-        raise AttributeError("Read only!")
 
-
-__all__ = ['DefaultDict', 'DefaultTypeDict', 'TypedDict', 'ReadOnlyDict']
+__all__ = ['DefaultDict', 'DefaultTypeDict', 'TypedDict']

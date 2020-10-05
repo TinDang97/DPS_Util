@@ -1,8 +1,9 @@
-from dpsutil.attrdict import AttrDict, DefaultDict, DefaultTypeDict, ReadOnlyDict
+from .attrdict import AttrDict, ReadOnlyDict
+from .defaultdict import DefaultDict, DefaultTypeDict, TypedDict
 import inspect
 
 
-__all__ = ['attribute_dict', 'default_dict', 'default_type_dict']
+__all__ = ['attribute_dict', 'default_dict', 'default_typed_dict', 'typed_dict']
 
 
 def _get_annotations(_cls):
@@ -97,7 +98,13 @@ def default_dict(_cls):
     return instance
 
 
-def default_type_dict(_cls):
+def typed_dict(_cls):
+    def instance():
+        return TypedDict(_get_vars_cls(_cls))
+    return instance
+
+
+def default_typed_dict(_cls):
     """
     Decorator that it create DefaultTypeDict base on attribute of class.
     Raise 'TypeError': On the same key, if type of value isn't same as type in annotations.
