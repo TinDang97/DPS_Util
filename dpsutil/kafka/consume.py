@@ -110,10 +110,11 @@ class Consumer(_ConsumerImpl):
 
         self.raise_error = raise_error
 
-        configs = ConsumerConfigs({"group.id": group_id}, **configs)
+        configs.update({"group.id": group_id})
+        configs = ConsumerConfigs(configs)
         self._value_deserializer = configs.pop('value.deserializer')
         self._key_deserializer = configs.pop('key.deserializer')
-        super().__init__(**configs)
+        super().__init__(configs)
 
         if topics:
             self.subscribe(topics)

@@ -70,8 +70,9 @@ def compress_ndarray(vectors, compress_type=COMPRESS_FASTEST) -> bytes:
     #   convert numpy shape
     for size_of_dim in vectors.shape:
         size_of_dim_bytes = cvt_dec2hex(size_of_dim)
+        len_size_of_dim_bytes = 2 - len(size_of_dim_bytes)
 
-        if (len_size_of_dim_bytes := 2 - len(size_of_dim_bytes)) > 0:
+        if len_size_of_dim_bytes > 0:
             size_of_dim_bytes = b"\x00" * len_size_of_dim_bytes + size_of_dim_bytes
 
         header += size_of_dim_bytes
